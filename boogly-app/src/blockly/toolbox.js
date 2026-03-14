@@ -1,13 +1,9 @@
 export const toolbox = {
   kind: "flyoutToolbox",
   contents: [
-    {
-      kind: "category",
-      name: "Pilha",
-      colour: 210,
-      contents: [
-        { kind: "block", type: "push" }
-      ]
-    }
+    { kind: "block", type: "push" },
+    {kind: "block", type: "pop"},
+    { kind: "block", type: "enqueue" },
+    { kind: "block", type: "dequeue" }
   ]
 };

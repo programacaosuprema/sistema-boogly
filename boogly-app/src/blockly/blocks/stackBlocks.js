@@ -4,8 +4,20 @@ Blockly.Blocks['push'] = {
   init: function () {
 
     this.appendValueInput("VALUE")
-      .setCheck("Number")
-      .appendField("empilhar");
+      .appendField("enfileirar");
+
+    this.setPreviousStatement(true);
+    this.setNextStatement(true);
+
+    this.setColour(210);
+  }
+};
+
+Blockly.Blocks['pop'] = {
+  init: function () {
+
+    this.appendValueInput("VALUE")
+      .appendField("desenfileirar");
 
     this.setPreviousStatement(true);
     this.setNextStatement(true);

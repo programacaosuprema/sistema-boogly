@@ -9,6 +9,9 @@ function App() {
 
       <BlocklyEditor />
 
+      <h2>Código Gerado</h2>
+      <pre id="generatedCode"></pre>
+
     </div>
   );
 }
