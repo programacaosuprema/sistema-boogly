@@ -1,0 +1,65 @@
+.app-grid {
+
+  display: grid;
+
+  height: 100vh;
+
+  grid-template-columns: 220px 2fr 1fr;
+  grid-template-rows: 70px 2fr 1fr;
+
+  grid-template-areas:
+
+    "sidebar header ranking"
+    "sidebar blockly simulation"
+    "sidebar code missions";
+
+  gap: 15px;
+
+  padding: 15px;
+
+  background: #f5f7fb;
+}
+
+/* áreas */
+
+.sidebar {
+  grid-area: sidebar;
+  background: linear-gradient(180deg,#4a90e2,#3578c9);
+  border-radius: 10px;
+}
+
+.header {
+  grid-area: header;
+  background: white;
+  border-radius: 10px;
+}
+
+.ranking {
+  grid-area: ranking;
+  background: white;
+  border-radius: 10px;
+}
+
+.blockly {
+  grid-area: blockly;
+  background: white;
+  border-radius: 10px;
+}
+
+.simulation {
+  grid-area: simulation;
+  background: white;
+  border-radius: 10px;
+}
+
+.code {
+  grid-area: code;
+  background: white;
+  border-radius: 10px;
+}
+
+.missions {
+  grid-area: missions;
+  background: white;
+  border-radius: 10px;
+}

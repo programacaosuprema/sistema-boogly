@@ -4,7 +4,7 @@ Blockly.Blocks['enqueue'] = {
   init: function () {
 
     this.appendValueInput("VALUE")
-      .appendField("empilhar").
+      .appendField("enfileirar").
       appendField(new Blockly.FieldNumber(0), "VALUE");
 
     this.setPreviousStatement(true);
@@ -18,7 +18,7 @@ Blockly.Blocks['dequeue'] = {
   init: function () {
 
     this.appendValueInput("VALUE")
-      .appendField("desempilhar");
+      .appendField("desenfileirar");
 
     this.setPreviousStatement(true);
     this.setNextStatement(true);

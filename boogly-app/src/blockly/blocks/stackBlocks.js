@@ -4,7 +4,7 @@ Blockly.Blocks['push'] = {
   init: function () {
 
     this.appendValueInput("VALUE")
-      .appendField("enfileirar").
+      .appendField("empilhar").
       appendField(new Blockly.FieldNumber(0), "VALUE")
 
     this.setPreviousStatement(true);
@@ -18,7 +18,7 @@ Blockly.Blocks['pop'] = {
   init: function () {
 
     this.appendValueInput("VALUE")
-      .appendField("desenfileirar");
+      .appendField("desemplilhar");
 
     this.setPreviousStatement(true);
     this.setNextStatement(true);
