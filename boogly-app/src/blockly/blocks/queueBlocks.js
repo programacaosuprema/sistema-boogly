@@ -4,7 +4,8 @@ Blockly.Blocks['enqueue'] = {
   init: function () {
 
     this.appendValueInput("VALUE")
-      .appendField("empilhar");
+      .appendField("empilhar").
+      appendField(new Blockly.FieldNumber(0), "VALUE");
 
     this.setPreviousStatement(true);
     this.setNextStatement(true);

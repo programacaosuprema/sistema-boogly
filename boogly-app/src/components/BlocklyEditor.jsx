@@ -10,6 +10,7 @@ import "../blockly/blocks/queueBlocks";
 import "../blockly/blocks/listBlocks";
 import "../blockly/generators/stackGenerator";
 import "../blockly/generators/queueGenerator";
+import { executeCode } from "../blockly/simulator/executeCode";
 
 import { javascriptGenerator } from "blockly/javascript";
 
@@ -25,10 +26,6 @@ export default function BlocklyEditor() {
     trashcan: true,
   });
 
-  console.log("push generator:", javascriptGenerator.forBlock["push"]);
-  console.log("enqueue generator:", javascriptGenerator.forBlock["enqueue"]);
-
-
   const onChange = (event) => {
 
     if (!workspaceRef.current) return;
@@ -38,12 +35,18 @@ export default function BlocklyEditor() {
 
     const code = javascriptGenerator.workspaceToCode(workspaceRef.current);
 
-    console.log("Código gerado:", code);
+    const steps = executeCode(code);
 
     const codeArea = document.getElementById("generatedCode");
 
+    const simuladorArea = document.getElementById("simulatedCode");
+
     if (codeArea) {
       codeArea.textContent = code;
+    }
+
+    if (simuladorArea){
+      simuladorArea.textContent = "[" + steps.at(steps.length-1) + "]"; // mostra o ultimo item da lista de vetores
     }
   };
 

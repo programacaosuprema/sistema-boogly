@@ -1,14 +1,13 @@
 import { javascriptGenerator } from "blockly/javascript";
 
-javascriptGenerator.forBlock["push"] = function (block, generator) {
+javascriptGenerator.forBlock["push"] = function (block) {
 
-  const value =
-    generator.valueToCode(block, "VALUE", generator.ORDER_ATOMIC) || 0;
-
-  return `push(${value});\n`;
+  const value = block.getFieldValue("VALUE");
+   
+  return `push(${value})\n`;
 };
 
 javascriptGenerator.forBlock["pop"] = function () {
 
-  return `pop();\n`;
+  return `pop()\n`;
 };

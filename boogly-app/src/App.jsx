@@ -12,6 +12,8 @@ function App() {
       <h2>Código Gerado</h2>
       <pre id="generatedCode"></pre>
 
+      <h2>Simulador</h2>
+      <pre id="simulatedCode"></pre>
     </div>
   );
 }

@@ -1,13 +1,13 @@
 import { javascriptGenerator } from "blockly/javascript";
 
-javascriptGenerator.forBlock["enqueue"] = function (block, generator) {
+javascriptGenerator.forBlock["enqueue"] = function (block) {
 
-  const value = generator.valueToCode(block, "VALUE", generator.ORDER_ATOMIC) || 0;
+  const value = block.getFieldValue("VALUE");
 
-  return `enqueue(${value});\n`;
+  return `enqueue(${value})\n`;
 };
 
 javascriptGenerator.forBlock["dequeue"] = function () {
 
-  return `dequeue();\n`;
+  return `dequeue()\n`;
 };
