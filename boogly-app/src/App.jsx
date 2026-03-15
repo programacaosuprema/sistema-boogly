@@ -9,11 +9,14 @@ import MissionPanel from "./components/panels/MissionPanel";
 import CodePanel from "./components/panels/CodePanel";
 
 import "./styles/layout.css";
+
 import { useState } from "react";
 
+// eslint-disable-next-line react-hooks/rules-of-hooks
+
 function App() {
-  // eslint-disable-next-line no-empty-pattern
-  const [] = useState([]);
+  const [structure] = useState("stack");
+
   return (
 
     <div className="app-grid">
@@ -30,20 +33,24 @@ function App() {
         <RankingPanel />
       </div>
 
-      <div className="blockly">
-        <BlocklyEditor />
-      </div>
+      <div className="blockly-simulation">
 
-      <div className="simulation">
-        <StackVisualizer />
-      </div>
+        <div className="blockly">
+          <BlocklyEditor  structure={structure}/>
+        </div>
 
-      <div className="missions">
-        <MissionPanel />
+        <div className="simulation">
+          <StackVisualizer />
+        </div>
+
       </div>
 
       <div className="code">
         <CodePanel />
+      </div>
+
+      <div className="missions">
+        <MissionPanel />
       </div>
 
     </div>

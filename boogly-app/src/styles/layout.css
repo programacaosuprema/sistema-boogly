@@ -3,18 +3,18 @@
   display: grid;
 
   height: 100vh;
+  width: 100%;
 
-  grid-template-columns: 220px 2fr 1fr;
+  grid-template-columns: 220px 2fr 300px;
   grid-template-rows: 70px 2fr 1fr;
 
   grid-template-areas:
 
     "sidebar header ranking"
-    "sidebar blockly simulation"
+    "sidebar blockly-simulation ranking"
     "sidebar code missions";
 
   gap: 15px;
-
   padding: 15px;
 
   background: #f5f7fb;
@@ -40,16 +40,26 @@
   border-radius: 10px;
 }
 
+/* área central */
+
+.blockly-simulation{
+  grid-area: blockly-simulation;
+  display: flex;
+  gap: 2px;
+  height: 100%;
+}
+
 .blockly {
-  grid-area: blockly;
   background: white;
+  padding: 20px;
   border-radius: 10px;
+  flex: 1;
 }
 
 .simulation {
-  grid-area: simulation;
   background: white;
   border-radius: 10px;
+  flex: 1;
 }
 
 .code {
@@ -62,4 +72,27 @@
   grid-area: missions;
   background: white;
   border-radius: 10px;
+}
+
+/* sidebar buttons */
+
+.structurebar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.structurebar button {
+  background: white;
+  color: #333;
+  padding: 12px;
+  border-radius: 8px;
+  border: none;
+  font-weight: bold;
+  transition: 0.2s;
+}
+
+.structurebar button:hover {
+  background: #e9eefc;
 }

@@ -2,7 +2,7 @@ export default function RankingPanel() {
 
   return (
 
-    <div style={{ padding: 20 }}>
+    <div>
 
       <h3>Ranking</h3>
 

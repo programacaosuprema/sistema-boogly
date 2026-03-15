@@ -17,7 +17,7 @@ import "../../blockly/generators/stackGenerator";
 import "../../blockly/generators/listGenerator";
 import "../../blockly/generators/queueGenerator";
 
-export default function BlocklyEditor({ structure }) {
+export default function BlocklyEditor({ structure = "stack" }) {
 
   const blocklyDiv = useRef(null);
   const workspaceRef = useRef(null);
@@ -29,6 +29,7 @@ export default function BlocklyEditor({ structure }) {
     if (structure === "queue") return queueToolbox;
     if (structure === "list") return listToolbox;
 
+    return stackToolbox;
   }
 
   useEffect(() => {
@@ -48,6 +49,10 @@ export default function BlocklyEditor({ structure }) {
       workspaceRef.current.updateToolbox(toolbox);
 
     }
+
+    setTimeout(() => {
+      Blockly.svgResize(workspaceRef.current);
+    }, 100);
 
   }, [getToolbox, structure]);
 
