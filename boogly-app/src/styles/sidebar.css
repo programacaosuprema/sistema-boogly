@@ -1,0 +1,11 @@
+.structurebar button.active {
+  background: #2c7be5;
+  color: white;
+  transform: scale(1.03);
+}
+
+.structurebar button.active {
+  background: linear-gradient(90deg,#2c7be5,#5aa3ff);
+  color: white;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+}

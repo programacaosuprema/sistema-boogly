@@ -1,4 +1,4 @@
-export default function Sidebar({ setStructure }) {
+export default function Sidebar({ structure, setStructure }) {
 
   return (
 
@@ -7,25 +7,39 @@ export default function Sidebar({ setStructure }) {
       <h2>Boogly</h2>
 
       <div className="structurebar">
-        <button onClick={() => setStructure("stack")}>
+
+        <button
+          className={structure === "stack" ? "active" : ""}
+          onClick={() => setStructure("stack")}
+        >
           📚 Pilha
         </button>
-        <button onClick={() => setStructure("queue")}>
+
+        <button
+          className={structure === "queue" ? "active" : ""}
+          onClick={() => setStructure("queue")}
+        >
           🧊 Fila
         </button>
-        <button onClick={() => setStructure("list")}>
+
+        <button
+          className={structure === "list" ? "active" : ""}
+          onClick={() => setStructure("list")}
+        >
           📦 Lista
         </button>
+
       </div>
 
       <hr />
-      <div >
+
+      <div>
         <h3>Desafios</h3>
 
         <p>Empilhar múltiplos</p>
         <p>Remover topo</p>
+
       </div>
-      
 
     </div>
 

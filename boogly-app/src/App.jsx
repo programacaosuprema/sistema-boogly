@@ -9,20 +9,21 @@ import MissionPanel from "./components/panels/MissionPanel";
 import CodePanel from "./components/panels/CodePanel";
 
 import "./styles/layout.css";
+import "./styles/sidebar.css"
+import "./styles/stack.css"
 
 import { useState } from "react";
 
-// eslint-disable-next-line react-hooks/rules-of-hooks
-
 function App() {
-  const [structure] = useState("stack");
+  const [structure, setStructure] = useState("stack");
+  const [stack, setStack] = useState([]);
 
   return (
 
     <div className="app-grid">
 
       <div className="sidebar">
-        <Sidebar />
+        <Sidebar setStructure={setStructure}/>
       </div>
 
       <div className="header">
@@ -36,11 +37,11 @@ function App() {
       <div className="blockly-simulation">
 
         <div className="blockly">
-          <BlocklyEditor  structure={structure}/>
+          <BlocklyEditor  structure={structure} setStack={setStack}/>
         </div>
 
         <div className="simulation">
-          <StackVisualizer />
+          <StackVisualizer stack={stack} />
         </div>
 
       </div>
