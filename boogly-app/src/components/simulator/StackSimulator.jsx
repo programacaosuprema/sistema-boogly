@@ -6,13 +6,15 @@ export class StackSimulator {
   }
 
   push(value) {
+
     this.stack.push(value);
 
     this.steps.push({
       operation: "push",
       value,
-      stack: [...this.stack]
+      state: [...this.stack]
     });
+
   }
 
   pop() {
@@ -22,7 +24,9 @@ export class StackSimulator {
     this.steps.push({
       operation: "pop",
       value: removed,
-      stack: [...this.stack]
+      state: [...this.stack]
     });
+
   }
+
 }

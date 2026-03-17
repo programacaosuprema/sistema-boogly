@@ -1,13 +1,11 @@
-export default function StackVisualizer({ stack = [] }) {
-
+export default function StackVisualizer({ data = [] }) {
   return (
     <div className="stack">
-      {stack.map((value, index) => (
+      {data.map((value, index) => (
         <div key={index} className="stack-item">
           {value}
         </div>
       ))}
     </div>
   );
-
 }

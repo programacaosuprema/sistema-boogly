@@ -1,27 +1,43 @@
 import { StackSimulator } from "./StackSimulator";
+import { QueueSimulator } from "./QueueSimulator";
+import { ListSimulator } from "./ListSimulator";
 
-export function executeCode(code) {
+const simulators = {
+  stack: StackSimulator,
+  queue: QueueSimulator,
+  list: ListSimulator
+};
 
-  const simulator = new StackSimulator();
+export function executeCode(code, structure) {
+
+  const Simulator = simulators[structure];
+
+  if (!Simulator) return [];
+
+  const simulator = new Simulator();
 
   const lines = code.split("\n");
 
   lines.forEach(line => {
 
-    if (line.startsWith("push")) {
+    const match = line.match(/(\w+)\((.*?)\)/);
 
-      const value = line.match(/\d+/)?.[0];
+    if (!match) return;
 
-      if (value) simulator.push(Number(value));
+    const operation = match[1];
+    const value = match[2] ? Number(match[2]) : undefined;
 
-    }
+    if (typeof simulator[operation] === "function") {
 
-    if (line.startsWith("pop")) {
-      simulator.pop();
+      if (value !== undefined) {
+        simulator[operation](value);
+      } else {
+        simulator[operation]();
+      }
+
     }
 
   });
 
   return simulator.steps;
-
 }

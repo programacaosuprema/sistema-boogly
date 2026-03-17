@@ -20,7 +20,7 @@ import "../../blockly/generators/queueGenerator";
 import { executeCode } from "../simulator/executeCode";
 import { javascriptGenerator } from "blockly/javascript";
 
-export default function BlocklyEditor({ structure, setStack }) {
+export default function BlocklyEditor({ structure, setData }) {
 
   const blocklyDiv = useRef(null);
   const workspaceRef = useRef(null);
@@ -31,7 +31,7 @@ export default function BlocklyEditor({ structure, setStack }) {
     if (structure === "stack") return stackToolbox;
     if (structure === "queue") return queueToolbox;
     if (structure === "list") return listToolbox;
-    return stackToolbox;
+    return queueToolbox;
   }, [structure]);
 
   useEffect(() => {
@@ -48,28 +48,27 @@ export default function BlocklyEditor({ structure, setStack }) {
 
         if (event.isUiEvent) return;
 
-        // Debounce para evitar execução excessiva
         clearTimeout(debounceRef.current);
 
         debounceRef.current = setTimeout(() => {
 
           const code = javascriptGenerator.workspaceToCode(workspaceRef.current);
-          const steps = executeCode(code) || [];
+
+          console.log("Generated code:", code);
+
+          const steps = executeCode(code, structure) || [];
 
           if (steps.length > 0) {
 
             const lastStep = steps[steps.length - 1];
 
-            const newStack = Array.isArray(lastStep)
-              ? lastStep
-              : (lastStep?.stack ?? []);
+            // Detecta automaticamente qual estrutura veio
+            const newState = lastStep?.state ?? [];
 
-            setStack(newStack);
+            setData(newState);
 
           } else {
-
-            setStack([]);
-
+            setData([]);
           }
 
         }, 200);
@@ -77,17 +76,16 @@ export default function BlocklyEditor({ structure, setStack }) {
       });
 
     } else {
-
+      workspaceRef.current.clear();
       workspaceRef.current.updateToolbox(toolbox);
 
     }
 
-    // Ajusta tamanho do workspace
     setTimeout(() => {
       Blockly.svgResize(workspaceRef.current);
     }, 100);
 
-  }, [toolbox, setStack]);
+  }, [toolbox, structure, setData]);
 
   // Cleanup ao desmontar componente
   useEffect(() => {
