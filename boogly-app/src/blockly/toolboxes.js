@@ -18,6 +18,7 @@ export const listToolbox = {
   kind: "flyoutToolbox",
   contents: [
     { kind: "block", type: "insert" },
-    { kind: "block", type: "remove" }
+    { kind: "block", type: "remove" }/*,
+    {kind: "block", type: "list_create"}*/
   ]
 };

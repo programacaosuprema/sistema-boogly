@@ -20,7 +20,7 @@ import "../../blockly/generators/queueGenerator";
 import { executeCode } from "../simulator/executeCode";
 import { javascriptGenerator } from "blockly/javascript";
 
-export default function BlocklyEditor({ structure, setData }) {
+export default function BlocklyEditor({ structure, setData, setCode}) {
 
   const blocklyDiv = useRef(null);
   const workspaceRef = useRef(null);
@@ -52,11 +52,11 @@ export default function BlocklyEditor({ structure, setData }) {
 
         debounceRef.current = setTimeout(() => {
 
-          const code = javascriptGenerator.workspaceToCode(workspaceRef.current);
+          const generatedCode = javascriptGenerator.workspaceToCode(workspaceRef.current); // getting the workspace generated code
 
-          console.log("Generated code:", code);
+          setCode(generatedCode);
 
-          const steps = executeCode(code, structure) || [];
+          const steps = executeCode(generatedCode, structure) || [];
 
           if (steps.length > 0) {
 
@@ -85,7 +85,7 @@ export default function BlocklyEditor({ structure, setData }) {
       Blockly.svgResize(workspaceRef.current);
     }, 100);
 
-  }, [toolbox, structure, setData]);
+  }, [toolbox, structure, setData, setCode]);
 
   // Cleanup ao desmontar componente
   useEffect(() => {

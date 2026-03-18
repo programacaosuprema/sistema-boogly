@@ -1,4 +1,5 @@
-import * as Blockly from "blockly";
+import * as Blockly from "blockly/core";
+import "blockly/blocks";
 
 Blockly.Blocks['insert'] = {
   init: function () {
@@ -6,7 +7,6 @@ Blockly.Blocks['insert'] = {
     this.appendValueInput("VALUE")
       .appendField("inserir").
       appendField(new Blockly.FieldNumber(0), "VALUE");
-
     this.setPreviousStatement(true);
     this.setNextStatement(true);
 
@@ -26,3 +26,14 @@ Blockly.Blocks['remove'] = {
     this.setColour(443);
   }
 };
+
+/*Blockly.Blocks['list_create'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField("criar lista")
+        .appendField(new Blockly.FieldTextInput("minhaLista"), "NAME");
+    this.appendStatementInput("DO").appendField("faça");
+    this.setOutput(true, "Array");
+    this.setColour(230);
+  }
+};*/

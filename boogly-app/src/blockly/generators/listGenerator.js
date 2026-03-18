@@ -8,6 +8,10 @@ javascriptGenerator.forBlock["insert"] = function (block) {
 };
 
 javascriptGenerator.forBlock["remove"] = function () {
-
   return `remove()\n`;
 };
+
+/*javascriptGenerator.forBlock["list-create"] = function (block) {
+  const name = block.getFieldValue("NAME");
+  return `let ${name} = [];\n`;
+}*/

@@ -19,8 +19,10 @@ import { useState } from "react";
 
 function App() {
 
-  const [structure, setStructure] = useState("list");
+  const [structure, setStructure] = useState("queue"); // how can i do to change dinamic structure
   const [data, setData] = useState([]);
+  const [code, setCode] = useState("");
+
 
   const simulators = {
     stack: StackVisualizer,
@@ -49,7 +51,7 @@ function App() {
       <div className="blockly-simulation">
 
         <div className="blockly">
-          <BlocklyEditor structure={structure} setData={setData}/>
+          <BlocklyEditor structure={structure} setData={setData} setCode={setCode}/>
         </div>
 
         <div className="simulation">
@@ -59,7 +61,7 @@ function App() {
       </div>
 
       <div className="code">
-        <CodePanel />
+        <CodePanel code={code}/>
       </div>
 
       <div className="missions">

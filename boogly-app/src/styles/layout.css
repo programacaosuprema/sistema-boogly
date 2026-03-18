@@ -66,6 +66,21 @@
   grid-area: code;
   background: white;
   border-radius: 10px;
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden; /* importante */
+}
+
+.code div {
+  flex: 1;
+  margin: 0;
+  padding: 15px;
+
+  overflow: auto; /* SCROLL */
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .missions {
@@ -95,4 +110,18 @@
 
 .structurebar button:hover {
   background: #e9eefc;
+}
+
+.blockly {
+  position: relative;
+  overflow: hidden; /* impede invasão */
+}
+
+.blockly > div {
+  height: 100% !important;
+}
+
+.blockly svg {
+  max-width: 100%;
+  max-height: 100%;
 }
