@@ -1,7 +1,7 @@
 import * as Blockly from "blockly/core";
 import "blockly/blocks";
 
-function blockSameName(block) {
+function blockSameName(block) { //verify same block name
 
   if (!block.workspace) return;
 
@@ -24,6 +24,20 @@ function blockSameName(block) {
   }
 }
 
+function getListDepth(block) { //verify list depth
+  let depth = 0;
+  let parent = block.getSurroundParent();
+
+  while (parent) {
+    if (parent.type === "list_container" || parent.type === "list_fixed") {
+      depth++;
+    }
+    parent = parent.getSurroundParent();
+  }
+
+  return depth;
+}
+
 Blockly.Blocks['list_container'] = {
   init: function () {
     this.appendDummyInput()
@@ -40,8 +54,13 @@ Blockly.Blocks['list_container'] = {
   },
     onchange: function () {
       blockSameName(this);
-  }
-  
+      const depth = getListDepth(this);
+
+      if (depth > 1) {
+        this.setWarningText("Só é permitido até 1 nível de lista dentro de outra!");
+        this.setColour(0);
+      }
+  }  
 };
 
 Blockly.Blocks['list_fixed'] = {
@@ -62,9 +81,34 @@ Blockly.Blocks['list_fixed'] = {
   },
 
   onchange: function () {
-    blockSameName(this);
+
     if (!this.workspace) return;
 
+    let warnings = [];
+
+    // 🔹 nome duplicado
+    const name = this.getFieldValue("NAME");
+
+    const allBlocks = this.workspace.getAllBlocks();
+
+    const sameName = allBlocks.filter(b =>
+      (b.type === "list_container" || b.type === "list_fixed") &&
+      b.id !== this.id &&
+      b.getFieldValue("NAME") === name
+    );
+
+    if (sameName.length > 0) {
+      warnings.push("Já existe uma lista com esse nome!");
+    }
+
+    // 🔹 profundidade
+    const depth = getListDepth(this);
+
+    if (depth > 1) {
+      warnings.push("Só é permitido até 1 nível de lista dentro de outra!");
+    }
+
+    // 🔹 limite de tamanho
     const maxSize = Number(this.getFieldValue("SIZE"));
     let current = this.getInputTargetBlock("OPERATIONS");
 
@@ -76,10 +120,16 @@ Blockly.Blocks['list_fixed'] = {
     }
 
     if (count > maxSize) {
-      this.setWarningText(`Limite de ${maxSize} elementos excedido!`);
+      warnings.push(`Limite de ${maxSize} elementos excedido!`);
+    }
+
+    // 🔥 aplica resultado final
+    if (warnings.length > 0) {
+      this.setWarningText(warnings.join("\n"));
       this.setColour(0);
     } else {
       this.setWarningText(null);
+      this.setColour(230);
     }
   }
 };
