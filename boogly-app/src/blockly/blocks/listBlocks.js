@@ -1,11 +1,34 @@
 import * as Blockly from "blockly/core";
 import "blockly/blocks";
 
+function blockSameName(block) {
+
+  if (!block.workspace) return;
+
+  const name = block.getFieldValue("NAME");
+
+  const allBlocks = block.workspace.getAllBlocks();
+
+  const sameName = allBlocks.filter(b =>
+    (b.type === "list_container" || b.type === "list_fixed") &&
+    b.id !== block.id &&
+    b.getFieldValue("NAME") === name
+  );
+
+  if (sameName.length > 0) {
+    block.setWarningText("Já existe uma lista com esse nome!");
+    block.setColour(0);
+  } else {
+    block.setWarningText(null);
+    block.setColour(230);
+  }
+}
+
 Blockly.Blocks['list_container'] = {
   init: function () {
     this.appendDummyInput()
       .appendField("lista")
-      .appendField(new Blockly.FieldTextInput("minhaLista"), "NAME");
+      .appendField(new Blockly.FieldTextInput("minha lista"), "NAME");
 
     this.appendStatementInput("OPERATIONS")
       .setCheck("LIST_OPERATION")
@@ -14,14 +37,18 @@ Blockly.Blocks['list_container'] = {
     this.setPreviousStatement(true);
     this.setNextStatement(true);
     this.setColour(230);
+  },
+    onchange: function () {
+      blockSameName(this);
   }
+  
 };
 
 Blockly.Blocks['list_fixed'] = {
   init: function () {
     this.appendDummyInput()
       .appendField("lista")
-      .appendField(new Blockly.FieldTextInput("minhaLista"), "NAME")
+      .appendField(new Blockly.FieldTextInput("minha lista fixa"), "NAME")
       .appendField("tamanho")
       .appendField(new Blockly.FieldNumber(3, 0), "SIZE");
 
@@ -35,7 +62,7 @@ Blockly.Blocks['list_fixed'] = {
   },
 
   onchange: function () {
-
+    blockSameName(this);
     if (!this.workspace) return;
 
     const maxSize = Number(this.getFieldValue("SIZE"));
