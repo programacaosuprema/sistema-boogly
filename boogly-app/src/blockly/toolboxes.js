@@ -17,8 +17,14 @@ export const queueToolbox = {
 export const listToolbox = {
   kind: "flyoutToolbox",
   contents: [
+    {kind: "block", type: "list_container"},
+    {kind: "block", type: "list_fixed"},
     { kind: "block", type: "insert" },
-    { kind: "block", type: "remove" }/*,
-    {kind: "block", type: "list_create"}*/
+    { kind: "block", type: "remove" },
+    {kind: "block", type: "remove_item"},
+    {kind: "block", type: "remove_index"},
+    {kind: "block", type: "is_empty"},
+    {kind: "block", type: "size"}
+
   ]
 };

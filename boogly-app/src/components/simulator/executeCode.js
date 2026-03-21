@@ -25,16 +25,13 @@ export function executeCode(code, structure) {
     if (!match) return;
 
     const operation = match[1];
-    const value = match[2] ? Number(match[2]) : undefined;
+
+    const args = match[2]
+      ? match[2].split(",").map(arg => Number(arg.trim()))
+      : [];
 
     if (typeof simulator[operation] === "function") {
-
-      if (value !== undefined) {
-        simulator[operation](value);
-      } else {
-        simulator[operation]();
-      }
-
+      simulator[operation](...args);
     }
 
   });

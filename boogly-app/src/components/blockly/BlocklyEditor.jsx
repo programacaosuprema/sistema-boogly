@@ -13,6 +13,7 @@ import "../../blockly/blocks/stackBlocks";
 import "../../blockly/blocks/queueBlocks";
 import "../../blockly/blocks/listBlocks";
 
+
 import "../../blockly/generators/stackGenerator";
 import "../../blockly/generators/listGenerator";
 import "../../blockly/generators/queueGenerator";
@@ -40,7 +41,7 @@ export default function BlocklyEditor({ structure, setData, setCode}) {
 
       workspaceRef.current = Blockly.inject(blocklyDiv.current, {
         toolbox,
-        grid: { spacing: 20, length: 2, colour: "#eee", snap: true },
+        grid: { spacing: 20, length: 3, colour: "#eac", snap: true },
         trashcan: true
       });
 
@@ -76,9 +77,13 @@ export default function BlocklyEditor({ structure, setData, setCode}) {
       });
 
     } else {
-      workspaceRef.current.clear();
-      workspaceRef.current.updateToolbox(toolbox);
+      workspaceRef.current.dispose();
 
+      workspaceRef.current = Blockly.inject(blocklyDiv.current, {
+        toolbox,
+        grid: { spacing: 20, length: 3, colour: "#eac", snap: true },
+        trashcan: true
+      });
     }
 
     setTimeout(() => {

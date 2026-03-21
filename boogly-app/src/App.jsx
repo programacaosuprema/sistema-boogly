@@ -19,7 +19,7 @@ import { useState } from "react";
 
 function App() {
 
-  const [structure, setStructure] = useState("queue"); // how can i do to change dinamic structure
+  const [structure, setStructure] = useState("list"); // how can i do to change dinamic structure
   const [data, setData] = useState([]);
   const [code, setCode] = useState("");
 

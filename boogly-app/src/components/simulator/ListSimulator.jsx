@@ -29,4 +29,28 @@ export class ListSimulator {
 
   }
 
+  remover_item(value) {
+    const index = this.lista.indexOf(value);
+
+    if (index === -1) {
+      console.warn("Item não existe");
+      return null;
+    }
+
+    this.lista.splice(index, 1);
+
+    this.steps.push([...this.lista]);
+  }
+
+  remover_da_posicao(index) {
+    if (index < 0 || index >= this.lista.length) {
+      console.warn("Posição inválida");
+      return null;
+    }
+
+    this.lista.splice(index, 1);
+
+    this.steps.push([...this.lista]);
+  }
+
 }
