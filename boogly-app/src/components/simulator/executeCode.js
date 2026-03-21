@@ -27,7 +27,17 @@ export function executeCode(code, structure) {
     const operation = match[1];
 
     const args = match[2]
-      ? match[2].split(",").map(arg => Number(arg.trim()))
+      ? match[2].split(",").map(arg => {
+          const value = arg.trim();
+
+          // string
+          if (value.startsWith('"') && value.endsWith('"')) {
+            return value.slice(1, -1);
+          }
+
+          // número
+          return Number(value);
+        })
       : [];
 
     if (typeof simulator[operation] === "function") {

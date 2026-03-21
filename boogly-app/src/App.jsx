@@ -31,6 +31,9 @@ function App() {
   };
 
   const SimulatorComponent = simulators[structure];
+ 
+  console.log("DATA:", data);
+
 
   return (
 

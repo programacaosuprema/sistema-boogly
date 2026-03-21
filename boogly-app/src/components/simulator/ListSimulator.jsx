@@ -1,56 +1,160 @@
 export class ListSimulator {
 
   constructor() {
-    this.list = [];
+    this.lists = {}; // 🔥 várias listas
     this.steps = [];
   }
 
-  insert(value) {
+  criar_lista(nome) {
+  if (!this.lists[nome]) {
+    this.lists[nome] = {
+      data: [],
+      limit: undefined
+    };
+  }
 
-    this.list.push(value);
+  this.steps.push({
+    operation: "criar_lista",
+    list: nome,
+    state: this.getState()
+  });
+}
+
+  criar_lista_limitada(nome, size) {
+    if (!this.lists[nome]) {
+      this.lists[nome] = {
+        data: [],
+        limit: size
+      };
+    }
 
     this.steps.push({
-      operation: "insert",
+      operation: "criar_lista_limitada",
+      list: nome,
+      state: this.getState()
+    });
+  }
+
+  inserir(value, nome) {
+
+    const list = this.getList(nome);
+
+    if (!list) return;
+
+    // 🔥 verify limit
+    if (list.limit !== undefined && list.data.length >= list.limit) {
+      console.warn("Lista cheia!");
+      return;
+    }
+
+    list.data.push(value);
+
+    this.steps.push({
+      operation: "inserir",
       value,
-      state: [...this.list]
+      list: nome,
+      state: this.getState()
     });
-
   }
 
-  remove() {
+  remover(nome) {
 
-    const removed = this.list.pop();
+    const list = this.getList(nome);
+
+    if (!list) return;
+
+    const removed = list.data.pop();
 
     this.steps.push({
-      operation: "remove",
+      operation: "remover",
       value: removed,
-      state: [...this.list]
+      list: nome,
+      state: this.getState()
     });
-
   }
 
-  remover_item(value) {
-    const index = this.lista.indexOf(value);
+  remover_item(value, nome) {
+
+    const list = this.getList(nome);
+
+    if (!list) return;
+
+    const index = list.data.indexOf(value);
 
     if (index === -1) {
-      console.warn("Item não existe");
-      return null;
+
+      this.steps.push({
+        operation: "erro",
+        message: "Item não existe",
+        list: nome,
+        state: this.getState()
+      });
+
+      return;
     }
 
-    this.lista.splice(index, 1);
+    list.data.splice(index, 1);
 
-    this.steps.push([...this.lista]);
+    this.steps.push({
+      operation: "remover_item",
+      value,
+      list: nome,
+      state: this.getState()
+    });
   }
 
-  remover_da_posicao(index) {
-    if (index < 0 || index >= this.lista.length) {
+  remover_da_posicao(index, nome) {
+
+    const list = this.getList(nome);
+
+    if (!list) return;
+
+    if (index < 0 || index >= list.data.length) {
       console.warn("Posição inválida");
+      return;
+    }
+
+    const removed = list.data.splice(index, 1)[0];
+
+    this.steps.push({
+      operation: "remover_da_posicao",
+      value: removed,
+      index,
+      list: nome,
+      state: this.getState()
+    });
+  }
+
+  tamanho(nome) {
+    const list = this.getList(nome);
+
+    return list ? list.data.length : 0;
+  }
+
+  ta_vazia(nome) {
+    const list = this.getList(nome);
+
+    return list ? list.data.length === 0 : true;
+  }
+
+  getList(nome) {
+    const list = this.lists[nome];
+
+    if (!list) {
+      console.warn(`Lista "${nome}" não existe`);
       return null;
     }
 
-    this.lista.splice(index, 1);
-
-    this.steps.push([...this.lista]);
+    return list;
   }
 
+  getState() {
+    const state = {};
+
+    for (const key in this.lists) {
+      state[key] = [...this.lists[key].data];
+    }
+
+    return state;
+  }
 }
