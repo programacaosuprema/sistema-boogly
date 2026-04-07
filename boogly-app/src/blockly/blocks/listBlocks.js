@@ -1,12 +1,13 @@
 import * as Blockly from "blockly/core";
 import "blockly/blocks";
 
-function blockSameName(block) { //verify same block name
-
+/* =====================================================
+   🔹 UTIL: verificar nomes duplicados de listas
+===================================================== */
+function blockSameName(block) {
   if (!block.workspace) return;
 
   const name = block.getFieldValue("NAME");
-
   const allBlocks = block.workspace.getAllBlocks();
 
   const sameName = allBlocks.filter(b =>
@@ -24,191 +25,155 @@ function blockSameName(block) { //verify same block name
   }
 }
 
-function getListDepth(block) { //verify list depth
-  let depth = 0;
-  let parent = block.getSurroundParent();
+/* =====================================================
+   🔹 UTIL: obter listas disponíveis
+===================================================== */
+function getLists(workspace) {
+  if (!workspace) return [["-", "-"]];
 
-  while (parent) {
-    if (parent.type === "list_container" || parent.type === "list_fixed") {
-      depth++;
-    }
-    parent = parent.getSurroundParent();
-  }
+  const blocks = workspace.getAllBlocks();
 
-  return depth;
+  const lists = blocks
+    .filter(b => b.type === "list_container" || b.type === "list_fixed")
+    .map(b => b.getFieldValue("NAME"))
+    .filter(name => name && name.trim() !== "");
+
+  if (lists.length === 0) return [["-", "-"]];
+
+  return lists.map(name => [name, name]);
 }
 
+/* =====================================================
+   🔹 BLOCO: LISTA SIMPLES
+===================================================== */
 Blockly.Blocks['list_container'] = {
   init: function () {
     this.appendDummyInput()
-      .appendField("lista")
-      .appendField(new Blockly.FieldTextInput("minha lista"), "NAME");
-
-    this.appendStatementInput("OPERATIONS")
-      .setCheck("LIST_OPERATION")
-      .appendField("faça");
+      .appendField("criar lista")
+      .appendField(new Blockly.FieldTextInput("minha_lista"), "NAME");
 
     this.setPreviousStatement(true);
     this.setNextStatement(true);
-    this.setColour(230);
-  },
-    onchange: function () {
-      blockSameName(this);
-      const depth = getListDepth(this);
-
-      if (depth > 1) {
-        this.setWarningText("Só é permitido até 1 nível de lista dentro de outra!");
-        this.setColour(0);
-      }
-  }  
-};
-
-Blockly.Blocks['list_fixed'] = {
-  init: function () {
-    this.appendDummyInput()
-      .appendField("lista")
-      .appendField(new Blockly.FieldTextInput("minha lista fixa"), "NAME")
-      .appendField("tamanho")
-      .appendField(new Blockly.FieldNumber(3, 0), "SIZE");
-
-    this.appendStatementInput("OPERATIONS")
-      .setCheck("LIST_OPERATION")
-      .appendField("faça");
-
-    this.setColour(230);
-    this.setPreviousStatement(true);
-    this.setNextStatement(true);
+    this.setColour(130);
   },
 
   onchange: function () {
-
-    if (!this.workspace) return;
-
-    let warnings = [];
-
-    // 🔹 nome duplicado
-    const name = this.getFieldValue("NAME");
-
-    const allBlocks = this.workspace.getAllBlocks();
-
-    const sameName = allBlocks.filter(b =>
-      (b.type === "list_container" || b.type === "list_fixed") &&
-      b.id !== this.id &&
-      b.getFieldValue("NAME") === name
-    );
-
-    if (sameName.length > 0) {
-      warnings.push("Já existe uma lista com esse nome!");
-    }
-
-    // 🔹 profundidade
-    const depth = getListDepth(this);
-
-    if (depth > 1) {
-      warnings.push("Só é permitido até 1 nível de lista dentro de outra!");
-    }
-
-    // 🔹 limite de tamanho
-    const maxSize = Number(this.getFieldValue("SIZE"));
-    let current = this.getInputTargetBlock("OPERATIONS");
-
-    let count = 0;
-
-    while (current) {
-      count++;
-      current = current.getNextBlock();
-    }
-
-    if (count > maxSize) {
-      warnings.push(`Limite de ${maxSize} elementos excedido!`);
-    }
-
-    // 🔥 aplica resultado final
-    if (warnings.length > 0) {
-      this.setWarningText(warnings.join("\n"));
-      this.setColour(0);
-    } else {
-      this.setWarningText(null);
-      this.setColour(230);
-    }
+    blockSameName(this);
   }
 };
 
+/* =====================================================
+   🔹 BLOCO: LISTA FIXA
+===================================================== */
+Blockly.Blocks['list_fixed'] = {
+  init: function () {
+    this.appendDummyInput()
+      .appendField("criar lista")
+      .appendField(new Blockly.FieldTextInput("minha_lista_fixa"), "NAME")
+      .appendField("tamanho")
+      .appendField(new Blockly.FieldNumber(3, 0), "SIZE");
+
+    this.setPreviousStatement(true);
+    this.setNextStatement(true);
+    this.setColour(130);
+  },
+
+  onchange: function () {
+    blockSameName(this);
+  }
+};
+
+/* =====================================================
+   🔹 BLOCO: INSERIR
+===================================================== */
 Blockly.Blocks['insert'] = {
   init: function () {
+    this.appendDummyInput()
+      .appendField("inserir")
+      .appendField(new Blockly.FieldNumber(0), "VALUE")
+      .appendField("em")
+      .appendField(new Blockly.FieldDropdown(() => getLists(this.workspace)), "LIST");
 
-    this.appendDummyInput("VALUE")
-      .appendField("inserir").
-      appendField(new Blockly.FieldNumber(0), "VALUE");
-
-    this.setPreviousStatement(true, "LIST_OPERATION");
-    this.setNextStatement(true, "LIST_OPERATION"); //this fix the list dependencie
-
-    this.setColour(333);
+    this.setPreviousStatement(true);
+    this.setNextStatement(true);
+    this.setColour(330);
   }
 };
 
+/* =====================================================
+   🔹 BLOCO: REMOVER (último)
+===================================================== */
 Blockly.Blocks['remove'] = {
   init: function () {
+    this.appendDummyInput()
+      .appendField("remover último de")
+      .appendField(new Blockly.FieldDropdown(() => getLists(this.workspace)), "LIST");
 
-    this.appendDummyInput("VALUE")
-      .appendField("remover");
-
-    this.setPreviousStatement(true, "LIST_OPERATION");
-    this.setNextStatement(true, "LIST_OPERATION");
-
-    this.setColour(443);
+    this.setPreviousStatement(true);
+    this.setNextStatement(true);
+    this.setColour(0);
   }
 };
 
+/* =====================================================
+   🔹 BLOCO: REMOVER ITEM (valor)
+===================================================== */
 Blockly.Blocks['remove_item'] = {
   init: function () {
-
     this.appendDummyInput()
       .appendField("remover item")
-      .appendField(new Blockly.FieldNumber(0), "VALUE");
+      .appendField(new Blockly.FieldNumber(0), "VALUE")
+      .appendField("de")
+      .appendField(new Blockly.FieldDropdown(() => getLists(this.workspace)), "LIST");
 
-    this.setPreviousStatement(true, "LIST_OPERATION");
-    this.setNextStatement(true, "LIST_OPERATION");
-
-    this.setColour(443);
+    this.setPreviousStatement(true);
+    this.setNextStatement(true);
+    this.setColour(0);
   }
 };
 
+/* =====================================================
+   🔹 BLOCO: REMOVER POR ÍNDICE
+===================================================== */
 Blockly.Blocks['remove_index'] = {
   init: function () {
-
     this.appendDummyInput()
       .appendField("remover posição")
-      .appendField(new Blockly.FieldNumber(0, 0), "INDEX");
+      .appendField(new Blockly.FieldNumber(0, 0), "INDEX")
+      .appendField("de")
+      .appendField(new Blockly.FieldDropdown(() => getLists(this.workspace)), "LIST");
 
-    this.setPreviousStatement(true, "LIST_OPERATION");
-    this.setNextStatement(true, "LIST_OPERATION");
-
-    this.setColour(443);
+    this.setPreviousStatement(true);
+    this.setNextStatement(true);
+    this.setColour(0);
   }
 };
 
+/* =====================================================
+   🔹 BLOCO: TAMANHO
+===================================================== */
 Blockly.Blocks['size'] = {
   init: function () {
-
     this.appendDummyInput()
-      .appendField("tamanho da lista");
+      .appendField("tamanho de")
+      .appendField(new Blockly.FieldDropdown(() => getLists(this.workspace)), "LIST");
 
-    this.setOutput(true, "Number"); 
-
+    this.setOutput(true, "Number");
     this.setColour(200);
   }
 };
 
+/* =====================================================
+   🔹 BLOCO: VERIFICAR SE VAZIA
+===================================================== */
 Blockly.Blocks['is_empty'] = {
   init: function () {
-
     this.appendDummyInput()
-      .appendField("lista está vazia");
+      .appendField("lista")
+      .appendField(new Blockly.FieldDropdown(() => getLists(this.workspace)), "LIST")
+      .appendField("está vazia");
 
     this.setOutput(true, "Boolean");
-
     this.setColour(200);
   }
 };
