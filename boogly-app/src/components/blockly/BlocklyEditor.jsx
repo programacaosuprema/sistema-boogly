@@ -42,7 +42,22 @@ export default function BlocklyEditor({ structure, setData, setCode}) {
       workspaceRef.current = Blockly.inject(blocklyDiv.current, {
         toolbox,
         grid: { spacing: 20, length: 3, colour: "#eac", snap: true },
-        trashcan: true
+        trashcan: true,
+
+        zoom: {
+          controls: true,
+          wheel: true,
+          startScale: 0.9,
+          maxScale: 2,
+          minScale: 0.5,
+          scaleSpeed: 1.1
+        },
+
+        move: {
+          scrollbars: true,
+          drag: true,
+          wheel: true
+        }
       });
 
       workspaceRef.current.addChangeListener((event) => {
