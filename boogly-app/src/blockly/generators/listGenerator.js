@@ -1,18 +1,5 @@
 import { javascriptGenerator } from "blockly/javascript";
 
-/*function getParentListName(block) {
-  let parent = block.getSurroundParent();
-
-  while (parent) {
-    if (parent.type === "list_container" || parent.type === "list_fixed") {
-      return parent.getFieldValue("NAME");
-    }
-    parent = parent.getSurroundParent();
-  }
-
-  return "lista"; // fallback
-}*/
-
 javascriptGenerator.forBlock["insert"] = function (block) {
 
   const value = block.getFieldValue("VALUE");
@@ -21,10 +8,16 @@ javascriptGenerator.forBlock["insert"] = function (block) {
   return `inserir(${value}, "${listName}")\n`;
 };
 
-javascriptGenerator.forBlock["remove"] = function (block) {
-  const listName = block.getFieldValue("LIST");
+javascriptGenerator.forBlock["remove_last"] = function (block) {
+   const listName = block.getFieldValue("LIST");
 
-  return `remover("${listName}")\n`;
+  return `remover_ultimo("${listName}")\n`;
+};
+
+javascriptGenerator.forBlock["remove_first"] = function (block) {
+   const listName = block.getFieldValue("LIST");
+
+  return `remover_primeiro("${listName}")\n`;
 };
 
 javascriptGenerator.forBlock["remove_item"] = function (block) {
@@ -36,7 +29,7 @@ javascriptGenerator.forBlock["remove_item"] = function (block) {
 
 javascriptGenerator.forBlock["remove_index"] = function (block) {
   const index = block.getFieldValue("INDEX");
-  const listName = block.getFieldValue("LIST");
+    const listName = block.getFieldValue("LIST");
 
   return `remover_da_posicao(${index}, "${listName}")\n`;
 };
@@ -50,7 +43,7 @@ javascriptGenerator.forBlock["size"] = function (block) {
 
 javascriptGenerator.forBlock["is_empty"] = function (block) {
 
-  const listName = block.getFieldValue("LIST");
+ const listName = block.getFieldValue("LIST");
 
   return [`ta_vazia("${listName}")`, javascriptGenerator.ORDER_NONE];
 };
@@ -68,4 +61,101 @@ javascriptGenerator.forBlock["list_fixed"] = function (block) {
   const size = block.getFieldValue("SIZE");
 
   return `criar_lista_limitada("${name}", ${size})\n`;
+};
+
+javascriptGenerator.forBlock["item_position"] = function (block) { /*  */
+
+  const value = block.getFieldValue("VALUE");
+  const listName = block.getFieldValue("LIST");
+
+  return `exibir_item_pelo_indice(${value}, "${listName}")\n`;
+};
+
+javascriptGenerator.forBlock["sublist"] = function (block) { 
+
+  const first_value = block.getFieldValue("FIRST_VALUE");
+  const second_value = block.getFieldValue("SECOND_VALUE");
+  const listName = block.getFieldValue("LIST");
+
+  return `sublista(${first_value}, ${second_value}, "${listName}")\n`;
+};
+
+javascriptGenerator.forBlock["list_index"] = function (block) { 
+
+  const value = block.getFieldValue("VALUE");
+
+  const listName = block.getFieldValue("LIST");
+
+  return `exibir_indice_pelo_item(${value}, "${listName}")\n`;
+};
+
+javascriptGenerator.forBlock["sort_ascending"] = function (block) { 
+
+  const listName = block.getFieldValue("LIST");
+
+  return `ordenar_crescente("${listName}")\n`;
+};
+
+javascriptGenerator.forBlock["sort_descending"] = function (block) { 
+
+  const listName = block.getFieldValue("LIST");
+
+  return `ordenar_decrescente("${listName}")\n`;
+};
+
+javascriptGenerator.forBlock["invert"] = function (block) { 
+
+  const listName = block.getFieldValue("LIST");
+
+  return `inverter("${listName}")\n`;
+};
+
+javascriptGenerator.forBlock["for_each"] = function (block) {
+  const variable = block.getFieldValue("VAR");
+  const list = block.getFieldValue("LIST");
+  const statements = javascriptGenerator.statementToCode(block, "DO");
+
+    return `
+      para_cada("${variable}", "${list}", function(${variable}) {
+        ${statements}
+      })
+    `;
+};
+
+javascriptGenerator.forBlock["if"] = function (block) {
+    const condition = javascriptGenerator.valueToCode(block, "CONDITION", 0) || "false";
+    const statements = javascriptGenerator.statementToCode(block, "DO");
+
+    return `
+      if (${condition}) {
+        ${statements}
+      }
+  `;
+};
+
+javascriptGenerator.forBlock["if_else"] = function (block) {
+  const condition = javascriptGenerator.valueToCode(block, "CONDITION", 0) || "false";
+  const doStatements = javascriptGenerator.statementToCode(block, "DO");
+  const elseStatements = javascriptGenerator.statementToCode(block, "ELSE");
+
+  return `
+  if (${condition}) {
+    ${doStatements}
+  } else {
+    ${elseStatements}
+  }
+  `;
+};
+
+javascriptGenerator.forBlock["compare"] = function (block) {
+  const A = javascriptGenerator.valueToCode(block, "A", 0) || 0;
+  const B = javascriptGenerator.valueToCode(block, "B", 0) || 0;
+  const op = block.getFieldValue("OP");
+
+  return [`${A} ${op} ${B}`, javascriptGenerator.ORDER_NONE];
+};
+
+javascriptGenerator.forBlock["variable"] = function (block) {
+  const name = block.getFieldValue("VAR");
+  return [name, javascriptGenerator.ORDER_NONE];
 };

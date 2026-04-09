@@ -57,7 +57,7 @@ export class ListSimulator {
     });
   }
 
-  remover(nome) {
+  remover_ultimo(nome) {
 
     const list = this.getList(nome);
 
@@ -66,7 +66,22 @@ export class ListSimulator {
     const removed = list.data.pop();
 
     this.steps.push({
-      operation: "remover",
+      operation: "remover_último",
+      value: removed,
+      list: nome,
+      state: this.getState()
+    });
+  }
+
+  remover_primeiro(nome) {
+
+    const list = this.getList(nome);
+
+    if (!list) return;
+
+    const removed = list.data.shift()
+    this.steps.push({
+      operation: "remover_primeiro",
       value: removed,
       list: nome,
       state: this.getState()
@@ -156,5 +171,25 @@ export class ListSimulator {
     }
 
     return state;
+  }
+
+  para_cada(variable, nome, callback) {
+    const list = this.getList(nome);
+
+    if (!list) return;
+
+    for (let i = 0; i < list.data.length; i++) {
+      const value = list.data[i];
+
+      callback(value);
+
+      this.steps.push({
+        operation: "loop",
+        variable,
+        value,
+        list: nome,
+        state: this.getState()
+      });
+    }
   }
 }

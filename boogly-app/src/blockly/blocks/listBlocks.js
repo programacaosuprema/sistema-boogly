@@ -96,17 +96,29 @@ Blockly.Blocks['insert'] = {
 
     this.setPreviousStatement(true);
     this.setNextStatement(true);
-    this.setColour(330);
-  }
+    this.setColour(100, 100, 100);
+  } 
 };
 
 /* =====================================================
    🔹 BLOCO: REMOVER (último)
 ===================================================== */
-Blockly.Blocks['remove'] = {
+Blockly.Blocks['remove_last'] = {
   init: function () {
     this.appendDummyInput()
       .appendField("remover último de")
+      .appendField(new Blockly.FieldDropdown(() => getLists(this.workspace)), "LIST");
+
+    this.setPreviousStatement(true);
+    this.setNextStatement(true);
+    this.setColour(0);
+  }
+};
+
+Blockly.Blocks['remove_first'] = {
+  init: function () {
+    this.appendDummyInput()
+      .appendField("remover primeiro de")
       .appendField(new Blockly.FieldDropdown(() => getLists(this.workspace)), "LIST");
 
     this.setPreviousStatement(true);
@@ -175,5 +187,163 @@ Blockly.Blocks['is_empty'] = {
 
     this.setOutput(true, "Boolean");
     this.setColour(200);
+  }
+};
+
+Blockly.Blocks['item_position'] = {
+  init: function () {
+    this.appendDummyInput()
+      .appendField("exibir item da posição ")
+      .appendField(new Blockly.FieldNumber(0), "VALUE")
+      .appendField("de")
+      .appendField(new Blockly.FieldDropdown(() => getLists(this.workspace)), "LIST");
+
+    this.setPreviousStatement(true);
+    this.setNextStatement(true);
+    this.setColour(200);
+  }
+};
+
+Blockly.Blocks['sublist'] = {
+  init: function () {
+    this.appendDummyInput()
+      .appendField("sublista de")
+      .appendField(new Blockly.FieldNumber(0), "FIRST_VALUE")
+      .appendField("até")
+      .appendField(new Blockly.FieldNumber(0), "SECOND_VALUE")
+      .appendField("de")
+      .appendField(new Blockly.FieldDropdown(() => getLists(this.workspace)), "LIST");
+
+    this.setPreviousStatement(true);
+    this.setNextStatement(true);
+    this.setColour(200);
+  }
+};
+
+Blockly.Blocks['list_index'] = {
+  init: function () {
+    this.appendDummyInput()
+      .appendField("exibir posição do item ")
+      .appendField(new Blockly.FieldNumber(0), "VALUE")
+      .appendField("de")
+      .appendField(new Blockly.FieldDropdown(() => getLists(this.workspace)), "LIST");
+
+    this.setPreviousStatement(true);
+    this.setNextStatement(true);
+    this.setColour(200);
+  }
+};
+
+Blockly.Blocks['sort_ascending'] = {
+  init: function () {
+    this.appendDummyInput()
+      .appendField("ordenar ")
+      .appendField(new Blockly.FieldDropdown(() => getLists(this.workspace)), "LIST")
+      .appendField(" (crescente)");
+
+    this.setPreviousStatement(true);
+    this.setNextStatement(true);
+    this.setColour(490);
+  }
+};
+
+Blockly.Blocks['sort_descending'] = {
+  init: function () {
+    this.appendDummyInput()
+      .appendField("ordenar ")
+      .appendField(new Blockly.FieldDropdown(() => getLists(this.workspace)), "LIST")
+      .appendField(" (decrescente)");
+
+    this.setPreviousStatement(true);
+    this.setNextStatement(true);
+    this.setColour(490);
+  }
+};
+
+Blockly.Blocks['invert'] = {
+  init: function () {
+    this.appendDummyInput()
+      .appendField("inverter ")
+      .appendField(new Blockly.FieldDropdown(() => getLists(this.workspace)), "LIST")
+
+    this.setPreviousStatement(true);
+    this.setNextStatement(true);
+    this.setColour(490);
+  }
+};
+
+Blockly.Blocks['for_each'] = {
+  init: function () {
+    this.appendDummyInput()
+      .appendField("para cada")
+      .appendField(new Blockly.FieldTextInput("item"), "VAR")
+      .appendField("em")
+      .appendField(new Blockly.FieldDropdown(() => getLists(this.workspace)), "LIST");
+
+    this.appendStatementInput("DO")
+      .appendField("faça");
+
+    this.setPreviousStatement(true);
+    this.setNextStatement(true);
+    this.setColour(120);
+  }
+};
+
+Blockly.Blocks['if'] = {
+  init: function () {
+    this.appendValueInput("CONDITION")
+      .appendField("se");
+
+    this.appendStatementInput("DO")
+      .appendField("faça");
+
+    this.setPreviousStatement(true);
+    this.setNextStatement(true);
+    this.setColour(210);
+  }
+};
+
+Blockly.Blocks['if_else'] = {
+  init: function () {
+    this.appendValueInput("CONDITION")
+      .appendField("se");
+
+    this.appendStatementInput("DO")
+      .appendField("faça");
+
+    this.appendStatementInput("ELSE")
+      .appendField("senão");
+
+    this.setPreviousStatement(true);
+    this.setNextStatement(true);
+    this.setColour(210);
+  }
+};
+
+Blockly.Blocks['compare'] = {
+  init: function () {
+    this.appendValueInput("A");
+
+    this.appendDummyInput()
+      .appendField(new Blockly.FieldDropdown([
+        ["=", "=="],
+        [">", ">"],
+        ["<", "<"]
+      ]), "OP");
+
+    this.appendValueInput("B");
+
+    this.setOutput(true, "Boolean");
+    this.setColour(260);
+  }
+};
+
+Blockly.Blocks['variable'] = {
+  init: function () {
+    this.appendDummyInput()
+      .appendField(new Blockly.FieldTextInput("item"), "VAR");
+
+    this.setOutput(true);
+    this.setColour(60);
   }
 };
