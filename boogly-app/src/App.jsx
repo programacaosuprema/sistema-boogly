@@ -1,3 +1,4 @@
+import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./context/useAuth";
 
 import Home from "./pages/Home";
@@ -6,9 +7,20 @@ import MainApp from "./pages/MainApp";
 export default function App() {
   const { isAuthenticated } = useAuth();
 
-  if (!isAuthenticated) {
-    return <Home />;
-  }
+  return (
+    <Routes>
 
-  return <MainApp />;
+      {/* HOME */}
+      <Route path="/" element={<Home />} />
+
+      {/* APP PROTEGIDO */}
+      <Route
+        path="/app"
+        element={
+          isAuthenticated ? <MainApp /> : <Navigate to="/" />
+        }
+      />
+
+    </Routes>
+  );
 }

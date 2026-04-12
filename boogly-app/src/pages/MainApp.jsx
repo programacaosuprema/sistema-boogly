@@ -8,9 +8,10 @@
   import QueueVisualizer from "../components/simulator/QueueVisualizer";
 
   import CodePanel from "../components/panels/CodePanel";
+  import { useAuth } from "../context/useAuth";
 
   export default function MainApp() {
-    const [structure, setStructure] = useState("list");
+    const { structure, setStructure } = useAuth();
     const [data, setData] = useState([]);
     const [code, setCode] = useState("");
 

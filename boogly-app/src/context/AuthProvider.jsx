@@ -5,15 +5,37 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  function login(email, nick) {
-    setUser({ email, nick });
-    setIsAuthenticated(true);
-  }
+  const [structure, setStructure] = useState("list"); // 🔥 NOVO
 
-  function register(email, nick) {
-    setUser({ email, nick });
-    setIsAuthenticated(true);
-  }
+  async function register(email, nick) {
+  const res = await fetch("http://localhost:3000/auth/register", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email, nick }),
+  });
+
+  const data = await res.json();
+
+  setUser(data.user);
+  setIsAuthenticated(true);
+}
+
+async function login(email) {
+  const res = await fetch("http://localhost:3000/auth/login", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email }),
+  });
+
+  const data = await res.json();
+
+  setUser(data.user);
+  setIsAuthenticated(true);
+}
 
   function loginAsGuest() {
     setUser({ nick: "Visitante" });
@@ -34,6 +56,8 @@ export function AuthProvider({ children }) {
         register,
         loginAsGuest,
         logout,
+        structure,        // 🔥
+        setStructure,     // 🔥
       }}
     >
       {children}
