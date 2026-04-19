@@ -14,8 +14,8 @@ export class ListSimulator {
   }
 
   this.steps.push({
-    operation: "criar_lista",
-    list: nome,
+    type: "create",
+    message: `criou a lista "${nome}"`,
     state: this.getState()
   });
 }
@@ -29,8 +29,8 @@ export class ListSimulator {
     }
 
     this.steps.push({
-      operation: "criar_lista_limitada",
-      list: nome,
+      type: "create",
+      message: `criou a lista "${nome}" com tamanho ${size}`,
       state: this.getState()
     });
   }
@@ -49,13 +49,14 @@ export class ListSimulator {
 
     list.data.push(value);
 
+    const position = list.data.length - 1;
+
     this.steps.push({
-      operation: "inserir",
-      value,
-      list: nome,
+      type: "add",
+      message: `inseriu ${value} na posição ${position}`,
       state: this.getState()
     });
-  }
+      }
 
   remover_ultimo(nome) {
 
@@ -66,9 +67,8 @@ export class ListSimulator {
     const removed = list.data.pop();
 
     this.steps.push({
-      operation: "remover_último",
-      value: removed,
-      list: nome,
+      type: "remove",
+      message: `removeu o último elemento (${removed})`,
       state: this.getState()
     });
   }
@@ -81,9 +81,8 @@ export class ListSimulator {
 
     const removed = list.data.shift()
     this.steps.push({
-      operation: "remover_primeiro",
-      value: removed,
-      list: nome,
+      type: "remove",
+      message: `removeu o primeiro elemento (${removed})`,
       state: this.getState()
     });
   }
@@ -99,11 +98,10 @@ export class ListSimulator {
     if (index === -1) {
 
       this.steps.push({
-        operation: "erro",
-        message: "Item não existe",
-        list: nome,
-        state: this.getState()
-      });
+      type: "error",
+      message: `item ${value} não existe`,
+      state: this.getState()
+    });
 
       return;
     }
@@ -111,9 +109,8 @@ export class ListSimulator {
     list.data.splice(index, 1);
 
     this.steps.push({
-      operation: "remover_item",
-      value,
-      list: nome,
+      type: "remove",
+      message: `removeu o item ${value}`,
       state: this.getState()
     });
   }
@@ -124,18 +121,21 @@ export class ListSimulator {
 
     if (!list) return;
 
-    if (index < 0 || index >= list.data.length) {
-      console.warn("Posição inválida");
+    if (index < 0 || index >= list.data.length){
+    
+      this.steps.push({
+        type: "error",
+        message: `índice ${index} não existe`,
+        state: this.getState()
+      });
       return;
     }
 
     const removed = list.data.splice(index, 1)[0];
 
     this.steps.push({
-      operation: "remover_da_posicao",
-      value: removed,
-      index,
-      list: nome,
+      type: "remove",
+      message: `removeu o item na posição ${index} (${removed})`,
       state: this.getState()
     });
   }
@@ -184,12 +184,10 @@ export class ListSimulator {
       callback(value);
 
       this.steps.push({
-        operation: "loop",
-        variable,
-        value,
-        list: nome,
-        state: this.getState()
-      });
+      type: "loop",
+      message: `percorrendo ${variable} = ${value}`,
+      state: this.getState()
+    });
     }
   }
 }

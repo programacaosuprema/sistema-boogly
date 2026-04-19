@@ -13,7 +13,6 @@ import "../../blockly/blocks/stackBlocks";
 import "../../blockly/blocks/queueBlocks";
 import "../../blockly/blocks/listBlocks";
 
-
 import "../../blockly/generators/stackGenerator";
 import "../../blockly/generators/listGenerator";
 import "../../blockly/generators/queueGenerator";
@@ -21,13 +20,17 @@ import "../../blockly/generators/queueGenerator";
 import { executeCode } from "../simulator/executeCode";
 import { javascriptGenerator } from "blockly/javascript";
 
-export default function BlocklyEditor({ structure, setData, setCode}) {
+export default function BlocklyEditor({
+  structure,
+  setCode,
+  setSteps,          // 🔥 NOVO
+  setCurrentStep     // 🔥 NOVO
+}) {
 
   const blocklyDiv = useRef(null);
   const workspaceRef = useRef(null);
   const debounceRef = useRef(null);
 
-  // Escolhe toolbox baseado na estrutura
   const toolbox = useMemo(() => {
     if (structure === "stack") return stackToolbox;
     if (structure === "queue") return queueToolbox;
@@ -68,24 +71,17 @@ export default function BlocklyEditor({ structure, setData, setCode}) {
 
         debounceRef.current = setTimeout(() => {
 
-          const generatedCode = javascriptGenerator.workspaceToCode(workspaceRef.current); // getting the workspace generated code
-
+          // 🔥 GERA CÓDIGO
+          const generatedCode = javascriptGenerator.workspaceToCode(workspaceRef.current);
           setCode(generatedCode);
 
+          // 🔥 GERA STEPS (MAS NÃO EXECUTA VISUALMENTE)
           const steps = executeCode(generatedCode, structure) || [];
 
-          if (steps.length > 0) {
+          setSteps(steps);        // 🔥 envia passos
+          setCurrentStep(0);      // 🔥 reseta execução
 
-            const lastStep = steps[steps.length - 1];
-
-            // Detecta automaticamente qual estrutura veio
-            const newState = lastStep?.state ?? [];
-
-            setData(newState);
-
-          } else {
-            setData([]);
-          }
+          // ❌ NÃO USAR MAIS setData AQUI
 
         }, 200);
 
@@ -105,9 +101,8 @@ export default function BlocklyEditor({ structure, setData, setCode}) {
       Blockly.svgResize(workspaceRef.current);
     }, 100);
 
-  }, [toolbox, structure, setData, setCode]);
+  }, [toolbox, structure, setSteps, setCurrentStep, setCode]);
 
-  // Cleanup ao desmontar componente
   useEffect(() => {
     return () => {
       if (workspaceRef.current) {
@@ -123,5 +118,4 @@ export default function BlocklyEditor({ structure, setData, setCode}) {
       style={{ height: "600px", width: "100%" }}
     />
   );
-
 }
