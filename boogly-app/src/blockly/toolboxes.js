@@ -9,6 +9,7 @@ export const stackToolbox = {
 export const queueToolbox = {
   kind: "flyoutToolbox",
   contents: [
+    {kind: "block", type: "queue_container"},
     { kind: "block", type: "enqueue" },
     { kind: "block", type: "dequeue" }
   ]

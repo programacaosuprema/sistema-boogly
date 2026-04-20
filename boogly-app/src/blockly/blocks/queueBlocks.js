@@ -3,14 +3,12 @@ import * as Blockly from "blockly";
 Blockly.Blocks['queue_container'] = {
   init: function () {
     this.appendDummyInput()
-      .appendField("fila")
-      .appendField(new Blockly.FieldTextInput("minhaFila"), "NAME");
+      .appendField("criar fila")
+      .appendField(new Blockly.FieldTextInput("minha_fila"), "NAME");
 
-    this.appendStatementInput("OPERATIONS")
-      .setCheck("QUEUE_OPERATION")
-      .appendField("faça");
-
-    this.setColour(180);
+    this.setPreviousStatement(true);
+    this.setNextStatement(true);
+    this.setColour(130);
   }
 };
 

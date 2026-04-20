@@ -1,13 +1,19 @@
 import { javascriptGenerator } from "blockly/javascript";
 
-javascriptGenerator.forBlock["enqueue"] = function (block) {
+javascriptGenerator.forBlock["queue_container"] = function (block) {
 
+  const name = block.getFieldValue("NAME");
+
+  return `criar_fila("${name}")\n`;
+};
+
+javascriptGenerator.forBlock["enqueue"] = function (block) {
   const value = block.getFieldValue("VALUE");
 
-  return `enqueue(${value})\n`;
+  return `desenfileirar(${value})\n`;
 };
 
 javascriptGenerator.forBlock["dequeue"] = function () {
 
-  return `dequeue()\n`;
+  return `enfileira()\n`;
 };
