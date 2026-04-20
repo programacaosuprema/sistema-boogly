@@ -125,7 +125,6 @@ export class ListSimulator {
     
       this.steps.push({
         type: "error",
-        message: `índice ${index} não existe`,
         state: this.getState()
       });
       return;

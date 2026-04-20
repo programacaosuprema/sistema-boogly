@@ -20,11 +20,14 @@ import "../../blockly/generators/queueGenerator";
 import { executeCode } from "../simulator/executeCode";
 import { javascriptGenerator } from "blockly/javascript";
 
+import { cGenerator } from "../../blockly/generators/cGenerator";
+
 export default function BlocklyEditor({
   structure,
   setCode,
-  setSteps,          // 🔥 NOVO
-  setCurrentStep     // 🔥 NOVO
+  setCCode,
+  setSteps,          
+  setCurrentStep,
 }) {
 
   const blocklyDiv = useRef(null);
@@ -71,17 +74,19 @@ export default function BlocklyEditor({
 
         debounceRef.current = setTimeout(() => {
 
-          // 🔥 GERA CÓDIGO
-          const generatedCode = javascriptGenerator.workspaceToCode(workspaceRef.current);
-          setCode(generatedCode);
+          const generatedExecCode = javascriptGenerator.workspaceToCode(workspaceRef.current);
+          setCode(generatedExecCode);
 
-          // 🔥 GERA STEPS (MAS NÃO EXECUTA VISUALMENTE)
-          const steps = executeCode(generatedCode, structure) || [];
+          // 🔥 NOVO → código C
+          const generatedCCode = cGenerator(workspaceRef.current);
+          console.log(generatedCCode);
+          setCCode(generatedCCode);
 
-          setSteps(steps);        // 🔥 envia passos
-          setCurrentStep(0);      // 🔥 reseta execução
+          // 🔥 EXECUÇÃO
+          const steps = executeCode(generatedExecCode, structure);
+          setSteps(steps);
+          setCurrentStep(0);
 
-          // ❌ NÃO USAR MAIS setData AQUI
 
         }, 200);
 
