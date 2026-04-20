@@ -79,7 +79,6 @@ export default function BlocklyEditor({
 
           // 🔥 NOVO → código C
           const generatedCCode = cGenerator(workspaceRef.current);
-          console.log(generatedCCode);
           setCCode(generatedCCode);
 
           // 🔥 EXECUÇÃO
@@ -106,7 +105,7 @@ export default function BlocklyEditor({
       Blockly.svgResize(workspaceRef.current);
     }, 100);
 
-  }, [toolbox, structure, setSteps, setCurrentStep, setCode]);
+  }, [toolbox, structure, setSteps, setCurrentStep, setCode, setCCode]);
 
   useEffect(() => {
     return () => {

@@ -61,6 +61,12 @@ export default function ListVisualizer({ data }) {
                               </div>
                             )}
 
+                            {isLast && (
+                              <div className="mb-2 rounded-full bg-rose-100 px-3 py-1 text-xs font-semibold text-rose-700">
+                                Fim
+                              </div>
+                            )}
+
                             <div
                               className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-white text-lg font-bold text-white shadow-lg"
                               style={{ backgroundColor: getNodeColor(index) }}
@@ -68,11 +74,7 @@ export default function ListVisualizer({ data }) {
                               {item}
                             </div>
 
-                            {isLast && (
-                              <div className="mt-2 rounded-full bg-rose-100 px-3 py-1 text-xs font-semibold text-rose-700">
-                                Fim
-                              </div>
-                            )}
+                            
                           </div>
                         </div>
 
