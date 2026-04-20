@@ -10,12 +10,10 @@ import QueueVisualizer from "../components/simulator/QueueVisualizer";
 import CodePanel from "../components/panels/CodePanel";
 import { useAuth } from "../context/useAuth";
 
-import CodeEditor from "../components/panels/CodeEditor";
-
 export default function MainApp() {
   const { structure, setStructure } = useAuth();
 
-  const [setData] = useState([]);
+  const [data, setData] = useState([]);
   const [code, setCode] = useState("");
   const [cCode, setCCode] = useState("");
 
@@ -164,7 +162,7 @@ export default function MainApp() {
           {/* 🔥 SIMULAÇÃO */}
           <div className="flex-1 min-h-0 bg-[#2A2A40] rounded-xl p-4 overflow-auto border border-white/10">
           
-            <SimulatorComponent data={steps[currentStep]?.state || {}} />
+            <SimulatorComponent data={steps[currentStep]?.state || {}} step={steps[currentStep]}/>
 
           </div>
 
