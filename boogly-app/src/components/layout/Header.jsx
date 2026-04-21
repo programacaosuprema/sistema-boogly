@@ -1,4 +1,6 @@
 import { Star, Trophy } from "lucide-react";
+import { useContext } from "react";
+import { AppContext } from "../../app_configuration/AppContext";
 
 const STRUCTURE_LABELS = {
   list: "Lista",
@@ -8,6 +10,7 @@ const STRUCTURE_LABELS = {
 
 export default function Header({ structure, points = 950 }) {
   const mode = STRUCTURE_LABELS[structure] || "Lista";
+  const {appName} = useContext(AppContext);
 
   return (
     <div className="w-full h-full flex items-center justify-between px-6">
@@ -16,7 +19,7 @@ export default function Header({ structure, points = 950 }) {
       <div className="flex items-center gap-3">
         <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-blue-500 rounded-md" />
         <h1 className="text-lg font-semibold text-white">
-          Estrutura de Dados com Blocos
+          {appName}
         </h1>
       </div>
 

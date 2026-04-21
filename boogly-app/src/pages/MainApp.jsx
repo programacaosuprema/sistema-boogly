@@ -8,7 +8,7 @@ import ListVisualizer from "../components/simulator/ListVisualizer";
 import QueueVisualizer from "../components/simulator/QueueVisualizer";
 
 import CodePanel from "../components/panels/CodePanel";
-import { useAuth } from "../context/useAuth";
+import { useAuth } from "../autenticator/useAuth";
 
 export default function MainApp() {
   const { structure, setStructure } = useAuth();

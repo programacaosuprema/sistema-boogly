@@ -1,12 +1,14 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import AuthModal from "./AuthModal";
-import { useAuth } from "../context/useAuth";
+import { useAuth } from "../autenticator/useAuth";
 import { useNavigate } from "react-router-dom";
+import {AppContext} from "../app_configuration/AppContext"
 
 export default function Home() {
   const { user, loginAsGuest, setStructure } = useAuth();
   const [openModal, setOpenModal] = useState(false);
   const navigate = useNavigate();
+  const {appName} = useContext(AppContext);
 
   function handleStart(type) {
     setStructure(type);
@@ -18,7 +20,7 @@ export default function Home() {
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-indigo-900 via-purple-900 to-blue-900 text-white p-6">
 
       {/* HEADER */}
-      <h1 className="text-5xl font-extrabold mb-2">Boogly 🚀</h1>
+      <h1 className="text-5xl font-extrabold mb-2">{appName}</h1>
       <p className="text-lg text-white/70 mb-10">
         Escolha seu primeiro desafio!
       </p>
