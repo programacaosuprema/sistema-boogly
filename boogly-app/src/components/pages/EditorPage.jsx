@@ -1,17 +1,17 @@
 import { useState, useEffect } from "react";
 
-import Header from "../components/layout/Header";
-import BlocklyEditor from "../components/blockly/BlocklyEditor";
+import BlocklyEditor from "../blockly/BlocklyEditor";
 
-import StackVisualizer from "../components/simulator/StackVisualizer";
-import ListVisualizer from "../components/simulator/ListVisualizer";
-import QueueVisualizer from "../components/simulator/QueueVisualizer";
+import StackVisualizer from "../simulator/StackVisualizer";
+import ListVisualizer from "../simulator/ListVisualizer";
+import QueueVisualizer from "../simulator/QueueVisualizer";
 
-import CodePanel from "../components/panels/CodePanel";
-import { useAuth } from "../autenticator/useAuth";
+import CodePanel from "../panels/CodePanel";
+import { useAuth } from "../../autenticator/useAuth";
 
-export default function MainApp() {
-  const { structure, setStructure } = useAuth();
+export default function EditorPage() {
+
+  const { structure } = useAuth();
 
   const [data, setData] = useState([]);
   const [code, setCode] = useState("");
@@ -21,18 +21,18 @@ export default function MainApp() {
   const [steps, setSteps] = useState([]);
   const [currentStep, setCurrentStep] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
-  
-  const [speed, setSpeed] = useState(1); // 1 = normal
-  const speedOptions = [
-  { label: "0.25x", value: 0.25 },
-  { label: "0.5x", value: 0.5 },
-  { label: "0.75x", value: 0.75 },
-  { label: "1x", value: 1 },
-  { label: "1.25x", value: 1.25 },
-  { label: "1.5x", value: 1.5 },
-  { label: "1.75x", value: 1.75 },
-];
 
+  const [speed, setSpeed] = useState(1);
+
+  const speedOptions = [
+    { label: "0.25x", value: 0.25 },
+    { label: "0.5x", value: 0.5 },
+    { label: "0.75x", value: 0.75 },
+    { label: "1x", value: 1 },
+    { label: "1.25x", value: 1.25 },
+    { label: "1.5x", value: 1.5 },
+    { label: "1.75x", value: 1.75 },
+  ];
 
   const simulators = {
     stack: StackVisualizer,
@@ -89,15 +89,10 @@ export default function MainApp() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
-
-      {/* HEADER */}
-      <header className="h-16 border-b border-white/10">
-        <Header structure={structure} setStructure={setStructure} />
-      </header>
+    <div className="flex flex-col h-full gap-3">
 
       {/* MAIN */}
-      <main className="flex flex-1 min-h-0 gap-3 p-3">
+      <div className="flex flex-1 min-h-0 gap-3">
 
         {/* BLOCKLY */}
         <section className="flex-1 bg-white/5 rounded-xl overflow-hidden">
@@ -105,16 +100,16 @@ export default function MainApp() {
             structure={structure}
             setData={setData}
             setCode={setCode}
-            setCCode={setCCode} 
-            setSteps={setSteps}              
-            setCurrentStep={setCurrentStep}  
+            setCCode={setCCode}
+            setSteps={setSteps}
+            setCurrentStep={setCurrentStep}
           />
         </section>
 
         {/* SIMULAÇÃO */}
         <section className="flex-1 min-h-0 bg-[#1E1E2E] rounded-xl p-4 flex flex-col gap-4 overflow-hidden">
 
-          {/* 🔥 TOPO - CONTROLES */}
+          {/* CONTROLES */}
           <div className="flex items-center gap-3 flex-wrap">
 
             <button
@@ -159,14 +154,15 @@ export default function MainApp() {
 
           </div>
 
-          {/* 🔥 SIMULAÇÃO */}
+          {/* VISUALIZAÇÃO */}
           <div className="flex-1 min-h-0 bg-[#2A2A40] rounded-xl p-4 overflow-auto border border-white/10">
-          
-            <SimulatorComponent data={steps[currentStep]?.state || {}} step={steps[currentStep]}/>
-
+            <SimulatorComponent
+              data={steps[currentStep]?.state || {}}
+              step={steps[currentStep]}
+            />
           </div>
 
-          {/* 🔥 HISTÓRICO */}
+          {/* HISTÓRICO */}
           <div className="bg-[#151521] rounded-xl p-4 h-40 overflow-auto border border-white/10">
 
             <h3 className="text-sm font-semibold mb-2 text-white/70">
@@ -180,6 +176,7 @@ export default function MainApp() {
             )}
 
             {steps.slice(0, currentStep + 1).map((step, i) => {
+
               const color =
                 step.type === "add"
                   ? "text-green-400"
@@ -204,7 +201,8 @@ export default function MainApp() {
                   </span>
 
                   <span>
-                    {step.message} → {JSON.stringify(Object.values(step.state)[0] || [])}
+                    {step.message} →{" "}
+                    {JSON.stringify(Object.values(step.state)[0] || [])}
                   </span>
 
                 </div>
@@ -214,10 +212,10 @@ export default function MainApp() {
           </div>
 
         </section>
-      </main>
+
+      </div>
 
       {/* CÓDIGO */}
-
       <footer className="h-56 bg-black/80 p-3 overflow-hidden">
         <CodePanel cCode={cCode} />
       </footer>

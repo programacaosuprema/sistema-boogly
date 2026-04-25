@@ -1,5 +1,6 @@
 import * as service from "../services/challenge.service.js";
 
+// 🔥 CRIAR DESAFIO
 export const create = async (req, res) => {
   try {
     const challenge = await service.createChallenge(req.body);
@@ -9,19 +10,108 @@ export const create = async (req, res) => {
   }
 };
 
+// 🔥 LISTAR DESAFIOS (COM STATUS + RESOLUÇÕES)
 export const getAll = async (req, res) => {
   try {
-    const challenges = await service.getAllChallenges();
+    // 🔥 se tiver auth real:
+    const userId = req.user?.id || null;
+
+    const challenges = await service.getAllChallenges(userId);
+
     res.json(challenges);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
+// 🔥 BUSCAR POR ID
 export const getById = async (req, res) => {
   try {
     const challenge = await service.getChallengeById(req.params.id);
+
+    if (!challenge) {
+      return res.status(404).json({ error: "Challenge not found" });
+    }
+
     res.json(challenge);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+function executeCommands(commands, input) {
+  let lista = [...input];  // começa com input
+
+  for (const cmd of commands) {
+    switch (cmd.type) {
+      case "criar_lista":
+        lista = [];
+        break;
+
+      case "inserir":
+        lista.push(cmd.value);
+        break;
+
+      case "remover_inicio":
+        lista.shift();
+        break;
+
+      case "reverse":
+        lista.reverse();
+        break;
+
+      default:
+        throw new Error(`Comando desconhecido: ${cmd.type}`);
+    }
+  }
+
+  return lista;
+}
+
+function arraysAreEqual(a, b) {
+  if (a.length !== b.length) return false;
+  return a.every((val, i) => val === b[i]);
+}
+
+export const submitChallenge = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userId, commands } = req.body;
+
+    const challenge = await service.getChallengeById(id);
+
+    if (!challenge) {
+      return res.status(404).json({ message: "Challenge not found" });
+    }
+
+    let passedAll = true;
+    let failedCase = null;
+    let finalOutput = null;
+
+    for (const testCase of challenge.testCases) {
+      const output = executeCommands(commands, testCase.input);
+
+      finalOutput = output;
+
+      if (!arraysAreEqual(output, testCase.expectedOutput)) {
+        passedAll = false;
+        failedCase = {
+          input: testCase.input,
+          expected: testCase.expectedOutput,
+          received: output
+        };
+        break;
+      }
+    }
+
+    return res.json({
+      success: passedAll,
+      output: finalOutput,
+      ...(passedAll
+        ? { message: "Correto 🎉" }
+        : { message: "Incorreto ❌", failedCase })
+    });
+
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

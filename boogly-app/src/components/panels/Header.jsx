@@ -1,6 +1,7 @@
 import { Star, Trophy } from "lucide-react";
 import { useContext } from "react";
 import { AppContext } from "../../app_configuration/AppContext";
+import { useNavigate } from "react-router-dom";
 
 const STRUCTURE_LABELS = {
   list: "Lista",
@@ -9,6 +10,7 @@ const STRUCTURE_LABELS = {
 };
 
 export default function Header({ structure, points = 950 }) {
+  const navigate = useNavigate();
   const mode = STRUCTURE_LABELS[structure] || "Lista";
   const {appName} = useContext(AppContext);
 
@@ -32,7 +34,10 @@ export default function Header({ structure, points = 950 }) {
         </div>
 
         {/* DESAFIOS */}
-        <button className="px-4 py-2 bg-white/10 rounded-full text-sm text-white hover:bg-white/20 transition">
+        <button
+          onClick={() => navigate("/app/challenges", { state: { structure } })}
+          className="px-4 py-2 bg-white/10 rounded-full text-sm text-white hover:bg-white/20 transition"
+        >
           desafios {mode.toLowerCase()}
         </button>
 

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useAuth } from "../autenticator/useAuth";
+import { useAuth } from "../../autenticator/useAuth";
 import { useNavigate } from "react-router-dom";
 import { Mail, Dice5, Key } from "lucide-react";
 

@@ -1,8 +1,8 @@
 import { useState, useContext } from "react";
 import AuthModal from "./AuthModal";
-import { useAuth } from "../autenticator/useAuth";
+import { useAuth } from "../../autenticator/useAuth";
 import { useNavigate } from "react-router-dom";
-import {AppContext} from "../app_configuration/AppContext"
+import {AppContext} from "../../app_configuration/AppContext"
 
 export default function Home() {
   const { user, loginAsGuest, setStructure } = useAuth();

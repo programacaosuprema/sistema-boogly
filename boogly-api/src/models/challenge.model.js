@@ -3,18 +3,21 @@ import mongoose from "mongoose";
 const testCaseSchema = new mongoose.Schema({
   input: {
     type: [Number],
-    required: true
+    required: true,
+    default: []
   },
   expectedOutput: {
     type: [Number],
-    required: true
+    required: true,
+    default: []
   }
 }, { _id: false });
 
 const ruleSchema = new mongoose.Schema({
   description: {
     type: String,
-    required: true
+    required: true,
+    trim: true
   },
   required: {
     type: Boolean,
@@ -26,16 +29,23 @@ const challengeSchema = new mongoose.Schema({
 
   title: {
     type: String,
-    required: true
+    required: true,
+    trim: true
   },
 
   description: {
-    type: String
+    type: String,
+    default: "",
+    trim: true
   },
 
   testCases: {
     type: [testCaseSchema],
-    required: true
+    required: true,
+    validate: {
+      validator: (arr) => arr.length > 0,
+      message: "At least one test case is required"
+    }
   },
 
   rules: {
@@ -50,15 +60,13 @@ const challengeSchema = new mongoose.Schema({
   },
 
   timeLimit: {
-    type: Number, // seconds
-    default: 120
-  },
-
-  createdAt: {
-    type: Date,
-    default: Date.now
+    type: Number,
+    default: 120,
+    min: 10
   }
 
+}, {
+  timestamps: true // 🔥 cria createdAt e updatedAt automaticamente
 });
 
 export const Challenge = mongoose.model("Challenge", challengeSchema);
