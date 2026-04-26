@@ -17,6 +17,13 @@ const userSchema = new mongoose.Schema({
   points: {
     type: Number,
     default: 0
+  },
+
+  authCode: {
+    type: String
+  },
+  authCodeExpiresAt: {
+    type: Date
   }
 
 }, { timestamps: true });
