@@ -8,7 +8,7 @@ const router = express.Router();
 router.get("/me", authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user.id)
-      .select("nickname email");
+      .select("nickname email points");
 
     if (!user) {
       return res.status(404).json({ error: "Usuário não encontrado" });

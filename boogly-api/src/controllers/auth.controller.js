@@ -64,3 +64,39 @@ function generateNick() {
 
   return `${roles[Math.floor(Math.random() * roles.length)]}_${themes[Math.floor(Math.random() * themes.length)]}_${num}`;
 }
+
+export const loginGuest = async (req, res) => {
+  try {
+
+    const timestamp = Date.now().toString().slice(-6); // últimos 6 dígitos
+    const random = Math.random().toString(36).substring(2, 5); // 3 letras
+
+    const nickname = `Visitante_${timestamp}${random}`;
+
+    const user = await User.create({
+      email: `guest_${Date.now()}@guest.com`, // fake
+      nickname,
+      points: 0,
+      guest: true // 🔥 importante
+    });
+
+    const token = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    return res.json({
+      user: {
+        id: user._id,
+        nickname: user.nickname,
+        email: user.email,
+        guest: true
+      },
+      token
+    });
+
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};

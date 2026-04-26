@@ -24,7 +24,11 @@ const userSchema = new mongoose.Schema({
   },
   authCodeExpiresAt: {
     type: Date
-  }
+  },
+  guest: {
+  type: Boolean,
+  default: false
+}
 
 }, { timestamps: true });
 
