@@ -1,4 +1,6 @@
 import * as service from "../services/challenge.service.js";
+import { Challenge } from "../models/challenge.model.js"; // 🔥 ajuste o caminho
+import mongoose from "mongoose";
 
 // 🔥 CRIAR DESAFIO
 export const create = async (req, res) => {
@@ -24,10 +26,17 @@ export const getAll = async (req, res) => {
   }
 };
 
-// 🔥 BUSCAR POR ID
-export const getById = async (req, res) => {
+export const getChallenge = async (req, res) => {
   try {
-    const challenge = await service.getChallengeById(req.params.id);
+    const { id } = req.params;
+
+    let challenge;
+
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      challenge = await Challenge.findById(id);
+    } else {
+      challenge = await Challenge.findOne({ publicId: id });
+    }
 
     if (!challenge) {
       return res.status(404).json({ error: "Challenge not found" });

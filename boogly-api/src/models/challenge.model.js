@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
+import { nanoid } from "nanoid";
 
+// 🔹 TEST CASE
 const testCaseSchema = new mongoose.Schema({
   input: {
     type: [Number],
@@ -13,6 +15,7 @@ const testCaseSchema = new mongoose.Schema({
   }
 }, { _id: false });
 
+// 🔹 RULES
 const ruleSchema = new mongoose.Schema({
   description: {
     type: String,
@@ -25,18 +28,30 @@ const ruleSchema = new mongoose.Schema({
   }
 }, { _id: false });
 
+// 🔥 MAIN SCHEMA
 const challengeSchema = new mongoose.Schema({
+
+  // 🔥 ID PÚBLICO (IMPORTANTE)
+  publicId: {
+    type: String,
+    unique: true,
+    default: () => nanoid(10),
+    index: true,
+    immutable: true
+  },
 
   title: {
     type: String,
     required: true,
-    trim: true
+    trim: true,
+    maxlength: 120
   },
 
   description: {
     type: String,
     default: "",
-    trim: true
+    trim: true,
+    maxlength: 2000
   },
 
   testCases: {
@@ -56,17 +71,30 @@ const challengeSchema = new mongoose.Schema({
   difficulty: {
     type: String,
     enum: ["easy", "medium", "hard"],
-    default: "easy"
+    default: "easy",
+    index: true
   },
 
   timeLimit: {
     type: Number,
     default: 120,
-    min: 10
+    min: 10,
+    max: 600
+  },
+
+  // 🔥 METRICS (pra sua tela já ficar mais rica)
+  solvedCount: {
+    type: Number,
+    default: 0
+  },
+
+  attempts: {
+    type: Number,
+    default: 0
   }
 
 }, {
-  timestamps: true // 🔥 cria createdAt e updatedAt automaticamente
+  timestamps: true
 });
 
 export const Challenge = mongoose.model("Challenge", challengeSchema);
