@@ -1,11 +1,10 @@
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import AuthModal from "./AuthModal";
 import { useAuth } from "../../autenticator/useAuth";
 import { useNavigate } from "react-router-dom";
 import {AppContext} from "../../app_configuration/AppContext"
 
 export default function Home() {
-  const { user, loginAsGuest, setStructure } = useAuth();
   const [openModal, setOpenModal] = useState(false);
   const navigate = useNavigate();
   const {appName} = useContext(AppContext);
@@ -14,6 +13,22 @@ export default function Home() {
     setStructure(type);
     loginAsGuest();
     navigate("/app");
+  }
+
+  const { user, loginAsGuest, setStructure, loadingAuth } = useAuth();
+  
+  useEffect(() => {
+    if (!loadingAuth && user) {
+      navigate("/app");
+    }
+  }, [loadingAuth, navigate, user]);
+
+  if (loadingAuth) {
+    return (
+      <div className="h-screen flex items-center justify-center text-white">
+        Carregando...
+      </div>
+    );
   }
 
   return (

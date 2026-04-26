@@ -1,48 +1,78 @@
-import { useState } from "react";
-import { AuthContext } from "./AuthContext";
+import { useState, useEffect, useContext } from "react";
+import { AuthContext } from "../autenticator/AuthContext";
+import { AppContext } from "../app_configuration/AppContext";
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [structure, setStructure] = useState("list");
+  const [loadingAuth, setLoadingAuth] = useState(true);
 
-  const [structure, setStructure] = useState("list"); // 🔥 NOVO
+  const { domainUrl } = useContext(AppContext);
 
-  async function register(email, nick) {
-  const res = await fetch("http://localhost:3000/auth/register", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ email, nick }),
-  });
+  // 🔥 RESTAURA SESSÃO AO ABRIR APP
+  useEffect(() => {
+    const token = localStorage.getItem("token");
 
-  const data = await res.json();
+    if (!token) {
+      setLoadingAuth(false);
+      return;
+    }
 
-  setUser(data.user);
-  setIsAuthenticated(true);
-}
+    async function loadUser() {
+      try {
+        const res = await fetch(`${domainUrl}/users/me`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-async function login(email) {
-  const res = await fetch("http://localhost:3000/auth/login", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ email }),
-  });
+        if (!res.ok) throw new Error();
 
-  const data = await res.json();
+        const data = await res.json();
 
-  setUser(data.user);
-  setIsAuthenticated(true);
-}
+        setUser(data);
+        setIsAuthenticated(true);
+      } catch {
+        localStorage.removeItem("token");
+        setUser(null);
+        setIsAuthenticated(false);
+      } finally {
+        setLoadingAuth(false);
+      }
+    }
+
+    loadUser();
+  }, [domainUrl]);
+
+  // 🔥 LOGIN (email ou nickname)
+  async function authenticate(identifier) {
+    const res = await fetch(`${domainUrl}/auth`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email: identifier }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || "Erro na autenticação");
+    }
+
+    localStorage.setItem("token", data.token);
+    setUser(data.user);
+    setIsAuthenticated(true);
+  }
 
   function loginAsGuest() {
-    setUser({ nick: "Visitante" });
+    setUser({ nickname: "Visitante" });
     setIsAuthenticated(true);
   }
 
   function logout() {
+    localStorage.removeItem("token");
     setUser(null);
     setIsAuthenticated(false);
   }
@@ -52,12 +82,14 @@ async function login(email) {
       value={{
         user,
         isAuthenticated,
-        login,
-        register,
+        loadingAuth,
+
+        authenticate,
         loginAsGuest,
         logout,
-        structure,        // 🔥
-        setStructure,     // 🔥
+
+        structure,
+        setStructure,
       }}
     >
       {children}

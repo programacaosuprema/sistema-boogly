@@ -2,6 +2,7 @@ import { Star, Trophy } from "lucide-react";
 import { useContext } from "react";
 import { AppContext } from "../../app_configuration/AppContext";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../autenticator/useAuth";
 
 const STRUCTURE_LABELS = {
   list: "Lista",
@@ -11,8 +12,14 @@ const STRUCTURE_LABELS = {
 
 export default function Header({ structure, points = 950 }) {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const mode = STRUCTURE_LABELS[structure] || "Lista";
   const {appName} = useContext(AppContext);
+
+  function handleLogout() {
+    logout();
+    navigate("/"); // volta pra home
+  }
 
   return (
     <div className="w-full h-full flex items-center justify-between px-6">
@@ -28,6 +35,19 @@ export default function Header({ structure, points = 950 }) {
       {/* 🔥 DIREITA → CONTROLES */}
       <div className="flex items-center gap-3">
 
+        <button
+          onClick={handleLogout}
+          className="bg-red-500 hover:bg-red-600 px-3 py-1 rounded-lg text-sm"
+        >
+          Sair
+        </button>
+
+        {/* PLAYER */}
+        {user ? (
+            <span>👤 {user.nickname}</span>
+          ) : (
+            <span>Não logado</span>
+          )}
         {/* MODO */}
         <div className="px-4 py-2 bg-white/10 rounded-full text-sm text-white">
           modo: <span className="font-semibold">{mode}</span>

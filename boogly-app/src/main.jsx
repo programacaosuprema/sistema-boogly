@@ -6,11 +6,12 @@ import { AuthProvider } from "./autenticator/AuthProvider";
 import { AppProvider } from './app_configuration/AppProvider';
 
 createRoot(document.getElementById('root')).render(
-  <AuthProvider>
-    <AppProvider>
+  <AppProvider>
+    <AuthProvider>
       <BrowserRouter>
         <App />
       </BrowserRouter>
-    </AppProvider>
-  </AuthProvider>
+    </AuthProvider>
+  </AppProvider>
+  
 );

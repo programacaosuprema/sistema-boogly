@@ -22,7 +22,7 @@ export default function ChallengePage() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, []);
+  }, [domainUrl]);
 
   function getStatusUI(status) {
     switch (status) {
