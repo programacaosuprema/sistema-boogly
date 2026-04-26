@@ -1,6 +1,5 @@
 import { Star, Trophy } from "lucide-react";
-import { useContext } from "react";
-import { AppContext } from "../../app_configuration/AppContext";
+import { useApp } from "../../app_configuration/useApp";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../autenticator/useAuth";
 
@@ -10,11 +9,11 @@ const STRUCTURE_LABELS = {
   queue: "Fila",
 };
 
-export default function Header({ structure, points = 950 }) {
+export default function Header({ structure }) {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const mode = STRUCTURE_LABELS[structure] || "Lista";
-  const {appName} = useContext(AppContext);
+  const {appName} = useApp();
 
   function handleLogout() {
     logout();
@@ -64,7 +63,7 @@ export default function Header({ structure, points = 950 }) {
         {/* PONTOS */}
         <div className="flex items-center gap-2 px-4 py-2 bg-white/10 rounded-full text-sm text-white">
           <Star className="w-4 h-4 text-yellow-400" />
-          {points} pontos
+          {user?.points ?? 0} pontos
         </div>
 
         {/* RANKING */}

@@ -42,6 +42,8 @@ export default function EditorPage() {
 
   const SimulatorComponent = simulators[structure];
 
+  console.log(SimulatorComponent);
+
   // 🔥 EXECUÇÃO AUTOMÁTICA
   useEffect(() => {
     if (!isRunning) return;

@@ -1,6 +1,7 @@
 import { useEffect, useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppContext } from "../../app_configuration/AppContext";
+import { LoadingPage } from "../pages/LoadingPage";
 
 export default function ChallengePage() {
   const [challenges, setChallenges] = useState([]);
@@ -72,10 +73,8 @@ export default function ChallengePage() {
 
   if (loading) {
     return (
-      <div className="h-full flex items-center justify-center text-white">
-        Carregando desafios...
-      </div>
-    );
+      <LoadingPage />
+    )
   }
 
   if (challenges.length === 0) {

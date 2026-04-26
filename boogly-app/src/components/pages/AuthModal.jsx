@@ -1,11 +1,9 @@
 import { useState } from "react";
 import { useAuth } from "../../autenticator/useAuth";
-import { useNavigate } from "react-router-dom";
 import { Mail } from "lucide-react";
 
 export default function AuthModal({ isOpen, onClose }) {
   const { authenticate } = useAuth();
-  const navigate = useNavigate();
 
   const [identifier, setIdentifier] = useState("");
   const [loading, setLoading] = useState(false);
@@ -21,11 +19,9 @@ export default function AuthModal({ isOpen, onClose }) {
     try {
       setLoading(true);
 
-      // 🔥 envia como email (backend já trata nick também)
       await authenticate(identifier);
 
-      navigate("/app");
-      onClose();
+      onClose(); // 🔥 só fecha
 
     } catch (err) {
       alert(err.message);
@@ -36,10 +32,8 @@ export default function AuthModal({ isOpen, onClose }) {
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-
       <div className="w-full max-w-md bg-gradient-to-br from-blue-600 to-purple-700 p-8 rounded-3xl text-white shadow-2xl relative">
 
-        {/* FECHAR */}
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-xl"

@@ -5,7 +5,7 @@ import { AppContext } from "../app_configuration/AppContext";
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [structure, setStructure] = useState("list");
+  const [structure, setStructure] = useState();
   const [loadingAuth, setLoadingAuth] = useState(true);
 
   const { domainUrl } = useContext(AppContext);
@@ -66,8 +66,20 @@ export function AuthProvider({ children }) {
     setIsAuthenticated(true);
   }
 
-  function loginAsGuest() {
-    setUser({ nickname: "Visitante" });
+  async function loginAsGuest() {
+    const res = await fetch(`${domainUrl}/auth/guest`, {
+      method: "POST",
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || "Erro ao entrar como visitante");
+    }
+
+    localStorage.setItem("token", data.token);
+
+    setUser(data.user);
     setIsAuthenticated(true);
   }
 
