@@ -1,15 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
+import { AppContext } from "../../app_configuration/AppContext";
 
 export default function ChallengePage() {
-
   const [challenges, setChallenges] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const { domainUrl } = useContext(AppContext);
 
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetch("http://localhost:3000/challenges", {
+    fetch(`${domainUrl}/challenges`, {
       headers: {
         Authorization: "Bearer TOKEN_AQUI"
       }
@@ -25,51 +27,119 @@ export default function ChallengePage() {
   function getStatusUI(status) {
     switch (status) {
       case "completed":
-        return "🟢 Concluído";
+        return (
+          <span className="px-2 py-1 rounded-full bg-green-500/20 text-green-300 text-xs font-semibold">
+            🟢 Concluído
+          </span>
+        );
       case "attempted":
-        return "🟡 Tentando";
+        return (
+          <span className="px-2 py-1 rounded-full bg-yellow-500/20 text-yellow-300 text-xs font-semibold">
+            🟡 Tentando
+          </span>
+        );
       default:
-        return "⚪ Pendente";
+        return (
+          <span className="px-2 py-1 rounded-full bg-red-500/20 text-red-300 text-xs font-semibold">
+            🔴 Pendente
+          </span>
+        );
+    }
+  }
+
+  function getDifficultyUI(difficulty) {
+    switch (difficulty) {
+      case "easy":
+        return (
+          <span className="px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-semibold">
+            Fácil
+          </span>
+        );
+      case "medium":
+        return (
+          <span className="px-2 py-1 rounded-full bg-orange-500/20 text-orange-300 text-xs font-semibold">
+            Médio
+          </span>
+        );
+      default:
+        return (
+          <span className="px-2 py-1 rounded-full bg-red-500/20 text-red-300 text-xs font-semibold">
+            Difícil
+          </span>
+        );
     }
   }
 
   if (loading) {
-    return <div className="text-white">Carregando...</div>;
+    return (
+      <div className="h-full flex items-center justify-center text-white">
+        Carregando desafios...
+      </div>
+    );
+  }
+
+  if (challenges.length === 0) {
+    return (
+      <div className="h-full flex items-center justify-center text-white/60">
+        Nenhum desafio encontrado
+      </div>
+    );
   }
 
   return (
-    <div className="p-6 text-white">
+    <div className="h-full p-4 text-white flex flex-col">
 
-      <h2 className="text-xl font-bold mb-4">
-        Desafios
-      </h2>
+      {/* HEADER */}
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold text-white">
+          Desafios
+        </h2>
+        <p className="text-sm text-white/60">
+          Resolva problemas e evolua suas habilidades
+        </p>
+      </div>
 
-      <div className="bg-white/5 rounded-xl overflow-hidden">
+      {/* TABELA */}
+      <div className="flex-1 overflow-hidden bg-white/5 rounded-xl">
 
-        <div className="grid grid-cols-4 px-4 py-2 text-sm text-white/60 border-b border-white/10">
-          <span>Status</span>
-          <span>Nome</span>
-          <span>Resoluções</span>
-          <span>Tentativas</span>
-        </div>
+        <div className="h-full overflow-x-auto">
+          <div className="min-w-[900px]">
 
-        {challenges.map((c) => (
-          <div
-            key={c._id}
-            onClick={() => navigate(`/app/challenges/${c._id}`)}
-            className="grid grid-cols-4 px-4 py-3 border-b border-white/5 hover:bg-white/10 cursor-pointer"
-          >
+            {/* HEADER TABELA */}
+            <div className="grid grid-cols-6 px-6 py-3 text-sm text-white/60 border-b border-white/10">
+              <span>Status</span>
+              <span>#</span>
+              <span>Nome</span>
+              <span>Dificuldade</span>
+              <span>Resoluções</span>
+              <span>Tentativas</span>
+            </div>
 
-            <span>{getStatusUI(c.userStatus)}</span>
-
-            <span>{c.title}</span>
-
-            <span>{c.solvedCount.toLocaleString()}</span>
-
-            <span>{c.attempts}</span>
+            {/* LINHAS */}
+            {challenges.map((c, index) => (
+              <div
+                key={c.publicId || c._id}
+                onClick={() => navigate(`/app/challenges/${c.publicId}`)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    navigate(`/app/challenges/${c.publicId}`);
+                  }
+                }}
+                className="grid grid-cols-6 px-6 py-3 border-b border-white/5 hover:bg-white/10 cursor-pointer transition"
+              >
+                <span>{getStatusUI(c.userStatus)}</span>
+                <span className="text-white/70">{index + 1}</span>
+                <span className="font-medium">{c.title}</span>
+                <span>{getDifficultyUI(c.difficulty)}</span>
+                <span>{c.solvedCount.toLocaleString()}</span>
+                <span>{c.attempts}</span>
+              </div>
+            ))}
 
           </div>
-        ))}
+        </div>
       </div>
     </div>
   );

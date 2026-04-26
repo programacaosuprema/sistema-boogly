@@ -1,18 +1,21 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext} from "react";
 import { useParams } from "react-router-dom";
 
 import { ChallengeIntro } from "./ChanllengeIntro";
 
-export default function ChallengeDetail() {
+import { AppContext } from "../../app_configuration/AppContext";
 
+export default function ChallengeDetail() {
   const { id } = useParams();
 
   const [challenge, setChallenge] = useState(null);
   const [loading, setLoading] = useState(true);
   const [started, setStarted] = useState(false);
 
+  const { domainUrl } = useContext(AppContext);
+
   useEffect(() => {
-    fetch(`http://localhost:3000/challenges/${id}`)
+    fetch(`${domainUrl}/challenges/${id}`)
       .then(res => res.json())
       .then(data => {
         setChallenge(data);
@@ -22,31 +25,28 @@ export default function ChallengeDetail() {
         console.error(err);
         setLoading(false);
       });
-  }, [id]);
+  }, [domainUrl, id]);
 
   if (loading) {
-    return <div className="text-white">Carregando desafio...</div>;
+    return <div className="h-dvh bg-gray-100 flex items-center justify-center text-white">Carregando desafio...</div>;
   }
 
   if (!challenge) {
-    return <div className="text-red-400">Desafio não encontrado</div>;
+    return <div className="h-dvh bg-gray-100 flex items-center justify-center text-red-400">Desafio não encontrado</div>;
   }
 
   return (
-    <div className="p-6 text-white">
-
+    <div className="h-full overflow-hidden">
       {!started ? (
         <ChallengeIntro
           challenge={challenge}
           onStart={() => setStarted(true)}
         />
       ) : (
-        <div>
-          {/* 🔥 AQUI VAI SEU WORKSPACE DE DESAFIO */}
-          <p>Workspace do desafio (próximo passo)</p>
+        <div className="h-full flex items-center justify-center">
+          <p>Workspace do desafio</p>
         </div>
       )}
-
     </div>
   );
 }

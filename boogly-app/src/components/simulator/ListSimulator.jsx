@@ -269,4 +269,142 @@ export class ListSimulator {
       callback(value);
     }
   }
+  
+  inverter(nome) {
+    const list = this.getList(nome);
+    if (!list) return;
+
+    let left = 0;
+    let right = list.data.length - 1;
+
+    while (left < right) {
+      this.steps.push({
+        type: "highlight_swap",
+        indices: [left, right],
+        message: `trocando ${list.data[left]} com ${list.data[right]}`,
+        state: this.getState()
+      });
+
+      [list.data[left], list.data[right]] = [list.data[right], list.data[left]];
+
+      this.steps.push({
+        type: "swap",
+        indices: [left, right],
+        state: this.getState()
+      });
+
+      left++;
+      right--;
+    }
+  }
+
+  ordenar_crescente(nome) {
+    const list = this.getList(nome);
+    if (!list) return;
+
+    const n = list.data.length;
+
+    for (let i = 0; i < n; i++) {
+      for (let j = 0; j < n - i - 1; j++) {
+
+        this.steps.push({
+          type: "compare",
+          indices: [j, j + 1],
+          message: `comparando ${list.data[j]} e ${list.data[j + 1]}`,
+          state: this.getState()
+        });
+
+        if (list.data[j] > list.data[j + 1]) {
+
+          this.steps.push({
+            type: "highlight_swap",
+            indices: [j, j + 1],
+            message: "trocando posições",
+            state: this.getState()
+          });
+
+          [list.data[j], list.data[j + 1]] = [list.data[j + 1], list.data[j]];
+
+          this.steps.push({
+            type: "swap",
+            indices: [j, j + 1],
+            state: this.getState()
+          });
+        }
+      }
+    }
+  }
+
+  ordenar_decrescente(nome) {
+    const list = this.getList(nome);
+    if (!list) return;
+
+    const n = list.data.length;
+
+    for (let i = 0; i < n; i++) {
+      for (let j = 0; j < n - i - 1; j++) {
+
+        this.steps.push({
+          type: "compare",
+          indices: [j, j + 1],
+          message: `comparando ${list.data[j]} e ${list.data[j + 1]}`,
+          state: this.getState()
+        });
+
+        if (list.data[j] < list.data[j + 1]) {
+
+          this.steps.push({
+            type: "highlight_swap",
+            indices: [j, j + 1],
+            message: "trocando posições",
+            state: this.getState()
+          });
+
+          [list.data[j], list.data[j + 1]] = [list.data[j + 1], list.data[j]];
+
+          this.steps.push({
+            type: "swap",
+            indices: [j, j + 1],
+            state: this.getState()
+          });
+        }
+      }
+    }
+  }
+  sublista(inicio, fim, nome) {
+    const list = this.getList(nome);
+    if (!list) return;
+
+    if (inicio < 0 || fim > list.data.length || inicio >= fim) {
+      this.steps.push({
+        type: "error",
+        message: "intervalo inválido",
+        state: this.getState()
+      });
+      return;
+    }
+
+    const sub = [];
+
+    for (let i = inicio; i < fim; i++) {
+
+      this.steps.push({
+        type: "highlight",
+        index: i,
+        message: `copiando ${list.data[i]}`,
+        state: this.getState()
+      });
+
+      sub.push(list.data[i]);
+    }
+
+    this.steps.push({
+      type: "result",
+      message: `sublista criada: [${sub}]`,
+      state: this.getState()
+    });
+
+    return sub;
+  }
 }
+

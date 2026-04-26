@@ -68,7 +68,7 @@ export default function BlocklyEditor({
     return () => {
       workspaceRef.current?.dispose();
     };
-  }, [category, setCCode, setCode, setCurrentStep, setSteps, structure, toolboxMap]);
+  }, [setCCode, setCode, setCurrentStep, setSteps, structure, toolboxMap]);
 
   // 🔥 ATUALIZA TOOLBOX AO TROCAR CATEGORIA
   useEffect(() => {
