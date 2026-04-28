@@ -9,11 +9,17 @@ import QueueVisualizer from "../simulator/QueueVisualizer";
 import CodePanel from "../panels/CodePanel";
 import { useAuth } from "../../autenticator/useAuth";
 
+import { runStack } from "../simulator/engines/stackEngine";
+import { runQueue } from "../simulator/engines/queueEngine";
+import { runList } from "../simulator/engines/listEngine";
+
+
+import { stackToolbox, queueToolbox, toolboxCategories } from "../../blockly/toolboxes";
+
+
 export default function EditorPage() {
 
   const { structure } = useAuth();
-
-  const [data, setData] = useState([]);
   const [code, setCode] = useState("");
   const [cCode, setCCode] = useState("");
 
@@ -39,6 +45,22 @@ export default function EditorPage() {
     queue: QueueVisualizer,
     list: ListVisualizer,
   };
+
+  const engines = {
+    stack: runStack,
+    queue: runQueue,
+    list: runList,
+  };
+
+  const toolboxes = {
+    stack: stackToolbox,
+    queue: queueToolbox,
+    list: toolboxCategories,
+  };
+
+  const currentToolbox = toolboxes[structure];
+
+  const runEngine = engines[structure];
 
   const SimulatorComponent = simulators[structure];
 
@@ -69,8 +91,21 @@ export default function EditorPage() {
     return () => clearTimeout(interval);
   }, [isRunning, currentStep, steps, speed]);
 
+  useEffect(() => {
+    if (!code) return;
+
+    const stepsResult = runEngine(code);
+
+    setSteps(stepsResult);
+    setCurrentStep(0);
+  }, [code, runEngine, structure]);
+
   // 🔥 CONTROLES
   function handleRun() {
+    if (currentStep >= steps.length - 1) {
+      setCurrentStep(0); // 🔥 reinicia
+    }
+
     setIsRunning(true);
   }
 
@@ -85,7 +120,9 @@ export default function EditorPage() {
   }
 
   function handleClear() {
-    setSteps([]);
+    const stepsResult = runEngine(code);
+
+    setSteps(stepsResult);
     setCurrentStep(0);
     setIsRunning(false);
   }
@@ -99,12 +136,9 @@ export default function EditorPage() {
         {/* BLOCKLY */}
         <section className="flex-1 bg-white/5 rounded-xl overflow-hidden">
           <BlocklyEditor
-            structure={structure}
-            setData={setData}
+            toolbox={currentToolbox}
             setCode={setCode}
             setCCode={setCCode}
-            setSteps={setSteps}
-            setCurrentStep={setCurrentStep}
           />
         </section>
 
