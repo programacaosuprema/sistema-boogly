@@ -90,6 +90,14 @@ export default function ChallengePage() {
 
       {/* HEADER */}
       <div className="mb-6">
+
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 bg-white/10 hover:bg-white/20 px-3 py-2 rounded-lg transition text-sm"
+        >
+          ← Voltar
+        </button>
+
         <h2 className="text-2xl font-bold text-white">
           Desafios
         </h2>

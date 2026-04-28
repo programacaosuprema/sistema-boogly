@@ -4,6 +4,8 @@ import { ChallengeIntro } from "./ChanllengeIntro";
 import { LoadingPage } from "../pages/LoadingPage";
 import { AppContext } from "../../app_configuration/AppContext";
 
+import { useNavigate } from "react-router-dom";
+
 export default function ChallengeDetail() {
   const { id } = useParams();
 
@@ -13,6 +15,8 @@ export default function ChallengeDetail() {
   const [starting, setStarting] = useState(false);
 
   const { domainUrl } = useContext(AppContext);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     async function loadChallenge() {
@@ -47,7 +51,15 @@ export default function ChallengeDetail() {
 
   return (
     <div className="p-6 text-white">
+
+      <button
+        onClick={() => navigate(-1)}
+        className="flex items-center gap-2 bg-white/10 hover:bg-white/20 px-3 py-2 rounded-lg transition text-sm"
+      >
+        ← Voltar
+      </button>
       {!started ? (
+        
         <ChallengeIntro
           challenge={challenge}
           onStart={() => {

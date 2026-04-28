@@ -2,6 +2,7 @@ import { Star, Trophy } from "lucide-react";
 import { useApp } from "../../app_configuration/useApp";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../autenticator/useAuth";
+import { useLocation } from "react-router-dom";
 
 const STRUCTURE_LABELS = {
   list: "Lista",
@@ -14,6 +15,9 @@ export default function Header({ structure }) {
   const { user, logout } = useAuth();
   const mode = STRUCTURE_LABELS[structure] || "Lista";
   const {appName} = useApp();
+  const location = useLocation();
+
+  const isChallengePage = location.pathname.startsWith("/app/challenges"); // especic routes to hide on the header
 
   function handleLogout() {
     logout();
@@ -53,12 +57,14 @@ export default function Header({ structure }) {
         </div>
 
         {/* DESAFIOS */}
-        <button
-          onClick={() => navigate("/app/challenges", { state: { structure } })}
-          className="px-4 py-2 bg-white/10 rounded-full text-sm text-white hover:bg-white/20 transition"
-        >
-          desafios {mode.toLowerCase()}
-        </button>
+        {!isChallengePage && (
+          <button
+            onClick={() => navigate("/app/challenges", { state: { structure } })}
+            className="px-4 py-2 bg-white/10 rounded-full text-sm text-white hover:bg-white/20 transition"
+          >
+            desafios {mode.toLowerCase()}
+          </button>
+        )}
 
         {/* PONTOS */}
         <div className="flex items-center gap-2 px-4 py-2 bg-white/10 rounded-full text-sm text-white">
