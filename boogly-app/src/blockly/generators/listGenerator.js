@@ -159,3 +159,9 @@ javascriptGenerator.forBlock["variable"] = function (block) {
   const name = block.getFieldValue("VAR");
   return [name, javascriptGenerator.ORDER_NONE];
 };
+
+javascriptGenerator.forBlock['run_program'] = function (block) {
+  const statements = javascriptGenerator.statementToCode(block, "DO");
+
+  return `// INICIAR_EXECUCAO\n${statements}// FIM_EXECUCAO\n`;
+};

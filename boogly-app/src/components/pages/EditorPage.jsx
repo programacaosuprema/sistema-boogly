@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 import BlocklyEditor from "../blockly/BlocklyEditor";
 
@@ -19,6 +19,8 @@ import { stackToolbox, queueToolbox, toolboxCategories } from "../../blockly/too
 
 export default function EditorPage() {
 
+  const historyRef = useRef(null);
+
   const { structure } = useAuth();
   const [code, setCode] = useState("");
   const [cCode, setCCode] = useState("");
@@ -27,18 +29,11 @@ export default function EditorPage() {
   const [steps, setSteps] = useState([]);
   const [currentStep, setCurrentStep] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
 
   const [speed, setSpeed] = useState(1);
 
-  const speedOptions = [
-    { label: "0.25x", value: 0.25 },
-    { label: "0.5x", value: 0.5 },
-    { label: "0.75x", value: 0.75 },
-    { label: "1x", value: 1 },
-    { label: "1.25x", value: 1.25 },
-    { label: "1.5x", value: 1.5 },
-    { label: "1.75x", value: 1.75 },
-  ];
+  const speedOptions = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75];
 
   const simulators = {
     stack: StackVisualizer,
@@ -92,25 +87,39 @@ export default function EditorPage() {
   }, [isRunning, currentStep, steps, speed]);
 
   useEffect(() => {
+    if (!historyRef.current) return;
+
+    const container = historyRef.current;
+    const activeItem = container.children[currentStep];
+
+    if (activeItem) {
+      activeItem.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+  }, [currentStep]);
+
+  // 🔥 CONTROLES
+  function handleRun() {
     if (!code) return;
 
     const stepsResult = runEngine(code);
 
     setSteps(stepsResult);
     setCurrentStep(0);
-  }, [code, runEngine, structure]);
-
-  // 🔥 CONTROLES
-  function handleRun() {
-    if (currentStep >= steps.length - 1) {
-      setCurrentStep(0); // 🔥 reinicia
-    }
-
     setIsRunning(true);
+    setIsPaused(false);
   }
 
   function handlePause() {
     setIsRunning(false);
+    setIsPaused(true);
+  }
+  
+  function handleContinue() {
+    setIsRunning(true);
+    setIsPaused(false);
   }
 
   function handleNextStep() {
@@ -120,11 +129,10 @@ export default function EditorPage() {
   }
 
   function handleClear() {
-    const stepsResult = runEngine(code);
-
-    setSteps(stepsResult);
+    setSteps([]);
     setCurrentStep(0);
     setIsRunning(false);
+    setIsPaused(false);
   }
 
   return (
@@ -149,17 +157,16 @@ export default function EditorPage() {
           <div className="flex items-center gap-3 flex-wrap">
 
             <button
-              onClick={handleRun}
+              onClick={() => {
+                if (!isRunning && !isPaused) return handleRun();
+                if (isRunning) return handlePause();
+                if (isPaused) return handleContinue();
+              }}
               className="bg-green-500 hover:bg-green-600 px-4 py-2 rounded-lg font-semibold shadow"
             >
-              ▶ Executar
-            </button>
-
-            <button
-              onClick={handlePause}
-              className="bg-yellow-500 hover:bg-yellow-600 px-4 py-2 rounded-lg font-semibold shadow"
-            >
-              ⏸ Pausar
+              {!isRunning && !isPaused && "▶ Executar"}
+              {isRunning && "⏸ Pausar"}
+              {isPaused && "▶ Continuar"}
             </button>
 
             <button
@@ -176,17 +183,26 @@ export default function EditorPage() {
               🧹 Limpar
             </button>
 
-            <select
-              value={speed}
-              onChange={(e) => setSpeed(Number(e.target.value))}
-              className="bg-[#2A2A40] text-white px-3 py-2 rounded-lg"
-            >
-              {speedOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+            <div className="flex items-center gap-3 w-64">
+
+              <span className="text-white text-sm w-10">
+                {speed}x
+              </span>
+
+              <input
+                type="range"
+                min="0"
+                max={speedOptions.length - 1}
+                step="1"
+                value={speedOptions.indexOf(speed)}
+                onChange={(e) => {
+                  const index = Number(e.target.value);
+                  setSpeed(speedOptions[index]);
+                }}
+                className="w-full cursor-pointer appearance-none h-2 rounded-lg bg-gray-700 accent-blue-500"
+              />
+
+            </div>
 
           </div>
 
@@ -199,7 +215,10 @@ export default function EditorPage() {
           </div>
 
           {/* HISTÓRICO */}
-          <div className="bg-[#151521] rounded-xl p-4 h-40 overflow-auto border border-white/10">
+          <div
+            ref={historyRef}
+            className="bg-[#151521] rounded-xl p-4 h-40 overflow-auto border border-white/10"
+        >
 
             <h3 className="text-sm font-semibold mb-2 text-white/70">
               Histórico de Execução
@@ -230,7 +249,14 @@ export default function EditorPage() {
                   : "•";
 
               return (
-                <div key={i} className="text-sm flex gap-2 items-center">
+                <div
+                  key={i}
+                  className={`text-sm flex gap-2 items-center px-2 py-1 rounded transition-all
+                    ${i === currentStep
+                      ? "bg-white/20 border-l-4 border-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.7)] "
+                      : "opacity-60"}
+                  `}
+                >
 
                   <span className={`${color} font-bold`}>
                     {symbol}

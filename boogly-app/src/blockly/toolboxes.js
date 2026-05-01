@@ -21,6 +21,7 @@ export const toolboxCategories = {
   list: {
     kind: "flyoutToolbox",
     contents: [
+      { kind: "block", type: "run_program" },
       { kind: "block", type: "list_container" },
       { kind: "block", type: "list_fixed" },
       { kind: "block", type: "insert" },

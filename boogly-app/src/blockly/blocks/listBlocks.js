@@ -43,6 +43,27 @@ function getLists(workspace) {
   return lists.map(name => [name, name]);
 }
 
+Blockly.Blocks['run_program'] = {
+  init: function () {
+    this.appendDummyInput()
+      .appendField("🚩 Quando EXECUTAR for clicado");
+
+    this.appendStatementInput("DO")
+      .setCheck(null);
+
+    this.setColour(20);
+
+    // 🔥 IMPORTANTE
+    this.setPreviousStatement(false); // não conecta acima
+    this.setNextStatement(false);     // não conecta abaixo
+
+    this.setDeletable(true);
+    this.setMovable(true);
+
+    this.setTooltip("Bloco inicial do programa");
+  }
+};
+
 /* =====================================================
    🔹 BLOCO: LISTA SIMPLES
 ===================================================== */

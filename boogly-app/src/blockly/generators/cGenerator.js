@@ -2,6 +2,8 @@ import { Generator } from "blockly";
 
 export const CGenerator = new Generator("C");
 
+let hasList = false;
+
 // 🔹 EXPRESSÕES
 CGenerator.forBlock['compare'] = function(block) {
   const a = CGenerator.valueToCode(block, 'A', CGenerator.ORDER_NONE) || "0";
@@ -102,8 +104,27 @@ export function cGenerator(workspace) {
     return code;
   }
 
-  const blocks = workspace.getTopBlocks(true);
+  const blocks = workspace.getTopBlocks(true).filter(
+    block => block.type === "run_program"
+  );
+
   if (!blocks || blocks.length === 0) return "";
+
+  let hasList = false;
+
+  blocks.forEach(block => {
+    let current = block.getInputTargetBlock("DO");
+
+    while (current) {
+      if (current.type === "list_container" || current.type === "list_fixed") {
+        hasList = true;
+        break;
+      }
+      current = current.getNextBlock();
+    }
+  });
+
+  if (!hasList) return "";
 
   let header = `#include <stdio.h>
 #include <stdlib.h>
@@ -142,7 +163,7 @@ typedef struct {
 
   // 🔹 PROCESSAMENTO
   blocks.forEach(block => {
-    let current = block;
+    let current = block.getInputTargetBlock("DO");
 
     while (current) {
 
