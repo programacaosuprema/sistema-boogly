@@ -51,7 +51,7 @@ Blockly.Blocks['run_program'] = {
     this.appendStatementInput("DO")
       .setCheck(null);
 
-    this.setColour(20);
+    this.setColour(490);
 
     // 🔥 IMPORTANTE
     this.setPreviousStatement(false); // não conecta acima
@@ -190,9 +190,8 @@ Blockly.Blocks['size'] = {
     this.appendDummyInput()
       .appendField("tamanho de")
       .appendField(new Blockly.FieldDropdown(() => getLists(this.workspace)), "LIST");
-    this.setPreviousStatement(true);
-    this.setNextStatement(true);
-    this.setColour(200);
+    this.setOutput(true, "Number"); // 🔥 AGORA É VALOR
+    this.setColour(60);
   }
 };
 
@@ -206,9 +205,9 @@ Blockly.Blocks['is_empty'] = {
       .appendField(new Blockly.FieldDropdown(() => getLists(this.workspace)), "LIST")
       .appendField("está vazia");
 
-    this.setPreviousStatement(true);
-    this.setNextStatement(true);
-    this.setColour(200);
+    this.setOutput(true, "Boolean");
+    
+    this.setColour(60);
   }
 };
 
@@ -236,14 +235,14 @@ Blockly.Blocks['show'] = {
     this.appendDummyInput()
       .appendField("+");
 
-    this.appendValueInput("VALUE");
+    this.appendValueInput("VALUE").setCheck(null); ;
 
     this.setInputsInline(true); // 🔥 ISSO AQUI FAZ FICAR EM LINHA
 
     this.setPreviousStatement(true, null);
     this.setNextStatement(true, null);
 
-    this.setColour(270); // roxo parecido com a imagem
+    this.setColour(200); // roxo parecido com a imagem
 
     this.setTooltip("Exibe texto + valor");
     this.setHelpUrl("");
@@ -331,13 +330,14 @@ Blockly.Blocks['for_each'] = {
 
     this.setPreviousStatement(true);
     this.setNextStatement(true);
-    this.setColour(120);
+    this.setColour(30);
   }
 };
 
 Blockly.Blocks['if'] = {
   init: function () {
     this.appendValueInput("CONDITION")
+      .setCheck("Boolean")
       .appendField("se");
 
     this.appendStatementInput("DO")
@@ -345,13 +345,24 @@ Blockly.Blocks['if'] = {
 
     this.setPreviousStatement(true);
     this.setNextStatement(true);
-    this.setColour(210);
-  }
+    this.setColour(289);
+
+    this.setOnChange(function() {
+      const condition = this.getInputTargetBlock("CONDITION");
+
+      if (!condition) {
+        this.setWarningText("Adicione uma condição");
+      } else {
+        this.setWarningText(null);
+      }
+      });
+    }
 };
 
 Blockly.Blocks['if_else'] = {
   init: function () {
     this.appendValueInput("CONDITION")
+      .setCheck("Boolean") // 🔥 FALTAVA ISSO
       .appendField("se");
 
     this.appendStatementInput("DO")
@@ -362,25 +373,54 @@ Blockly.Blocks['if_else'] = {
 
     this.setPreviousStatement(true);
     this.setNextStatement(true);
-    this.setColour(210);
+    this.setColour(289);  
+
+    this.setOnChange(function() {
+      const condition = this.getInputTargetBlock("CONDITION");
+
+      if (!condition) {
+        this.setWarningText("Adicione uma condição");
+      } else {
+        this.setWarningText(null);
+      }
+    }); 
   }
 };
 
 Blockly.Blocks['compare'] = {
   init: function () {
-    this.appendValueInput("A");
+    this.appendValueInput("A")
+    .setCheck(["Number", "Variable"]);
 
     this.appendDummyInput()
       .appendField(new Blockly.FieldDropdown([
         ["=", "=="],
+        ["≠", "!="],
         [">", ">"],
-        ["<", "<"]
+        ["<", "<"],
+        ["≥", ">="],
+        ["≤", "<="]
       ]), "OP");
 
-    this.appendValueInput("B");
+    this.appendValueInput("B")
+    .setCheck(["Number", "Variable"]);
 
-    this.setOutput(true, "Boolean");
-    this.setColour(260);
+    this.setInputsInline(true);
+
+    this.setOutput(true, "Boolean"); // 🔥 ESSENCIAL
+
+    this.setColour(210);
+
+    this.setOnChange(function() {
+      const a = this.getInputTargetBlock("A");
+      const b = this.getInputTargetBlock("B");
+
+      if (!a || !b) {
+        this.setWarningText("Preencha os dois lados da comparação");
+      } else {
+        this.setWarningText(null);
+      }
+    });
   }
 };
 
@@ -389,7 +429,8 @@ Blockly.Blocks['variable'] = {
     this.appendDummyInput()
       .appendField(new Blockly.FieldTextInput("variável"), "VAR");
 
-    this.setOutput(true);
+    this.setOutput(true, "Variable"); 
+
     this.setColour(60);
   }
 };

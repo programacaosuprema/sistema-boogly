@@ -4,18 +4,45 @@ export const CGenerator = new Generator("C");
 
 // 🔹 EXPRESSÕES
 CGenerator.forBlock['compare'] = function(block) {
-  const a = CGenerator.valueToCode(block, 'A', CGenerator.ORDER_NONE) || "0";
-  const b = CGenerator.valueToCode(block, 'B', CGenerator.ORDER_NONE) || "0";
+
+  let aBlock = block.getInputTargetBlock("A");
+  let bBlock = block.getInputTargetBlock("B");
+
+  let a = "0";
+  let b = "0";
+
+  if (aBlock) {
+    const result = CGenerator.blockToCode(aBlock);
+    a = Array.isArray(result) ? result[0] : result;
+  }
+
+  if (bBlock) {
+    const result = CGenerator.blockToCode(bBlock);
+    b = Array.isArray(result) ? result[0] : result;
+  }
+
   const op = block.getFieldValue('OP');
+
   return [`${a} ${op} ${b}`, CGenerator.ORDER_NONE];
 };
 
 CGenerator.forBlock['variable'] = function(block) {
-  return [block.getFieldValue('VAR'), CGenerator.ORDER_NONE];
+  return [block.getFieldValue('VAR'), CGenerator.ORDER_ATOMIC];
 };
 
-CGenerator.forBlock['variable'] = function(block) {
-  return [block.getFieldValue('VAR'), CGenerator.ORDER_NONE];
+CGenerator.forBlock['text'] = function(block) {
+  const text = block.getFieldValue('TEXT') || "";
+  return [`"${text}"`, CGenerator.ORDER_ATOMIC];
+};
+
+CGenerator.forBlock['is_empty'] = function(block) {
+  const list = block.getFieldValue("LIST");
+  return [`(${list}.tamanho == 0)`, CGenerator.ORDER_ATOMIC];
+};
+
+CGenerator.forBlock['size'] = function(block) {
+  const list = block.getFieldValue("LIST");
+  return [`${list}.tamanho`, CGenerator.ORDER_ATOMIC];
 };
 
 // 🔹 GERADOR PRINCIPAL
@@ -32,23 +59,150 @@ export function cGenerator(workspace) {
     return code + indent() + line + "\n";
   }
 
+  // 🔹 CONTROLE DE FUNÇÕES USADAS
+  let functions = "";
+  let usedFunctions = {
+    inicializar: false,
+    inserir: false,
+    remover_inicio: false,
+    remover_final: false,
+    remover_valor: false,
+    remover_posicao: false,
+    obter: false,
+    buscar: false,
+    inverter: false,
+    vazia: false,
+    ordenar_crescente: false,
+    ordenar_decrescente: false,
+    sublista: false,
+    size: 0,
+  };
+
+  // 🔹 FUNÇÃO CENTRAL
   function generateBlock(block) {
+    
     let code = "";
     let current = block;
+    console.log("tipo atual:", current.type);
 
     while (current) {
+      // LISTA
+      if (
+        current.type === "list_container" ||
+        current.type === "list_fixed"
+      ) {
+        const name = current.getFieldValue("NAME");
+
+        if (current.type === "list_fixed") {
+          usedFunctions.size = current.getFieldValue("SIZE");
+        }
+
+        usedFunctions.inicializar = true;
+
+        code = addLine(code, `Lista ${name};`);
+        code = addLine(code, `inicializar(&${name});`);
+      }
 
       // INSERT
       if (current.type === "insert") {
+        usedFunctions.inserir = true;
+
         const value = current.getFieldValue("VALUE");
         const list = current.getFieldValue("LIST");
+
         code = addLine(code, `inserir_inicio(&${list}, ${value});`);
+      }
+
+      // REMOVE FIRST
+      if (current.type === "remove_first") {
+        usedFunctions.remover_inicio = true;
+
+        const list = current.getFieldValue("LIST");
+        code = addLine(code, `remover_inicio(&${list});`);
+      }
+
+      // REMOVE LAST
+      if (current.type === "remove_last") {
+        usedFunctions.remover_final = true;
+
+        const list = current.getFieldValue("LIST");
+        code = addLine(code, `remover_final(&${list});`);
+      }
+
+      // REMOVE ITEM
+      if (current.type === "remove_item") {
+        usedFunctions.remover_valor = true;
+
+        const value = current.getFieldValue("VALUE");
+        const list = current.getFieldValue("LIST");
+        code = addLine(code, `remover_valor(&${list}, ${value});`);
+      }
+
+      // REMOVE INDEX
+      if (current.type === "remove_index") {
+        usedFunctions.remover_posicao = true;
+
+        const index = current.getFieldValue("INDEX");
+        const list = current.getFieldValue("LIST");
+        code = addLine(code, `remover_posicao(&${list}, ${index});`);
+      }
+
+      // GET
+      if (current.type === "item_position") {
+        usedFunctions.obter = true;
+
+        const pos = current.getFieldValue("VALUE");
+        const list = current.getFieldValue("LIST");
+        code = addLine(code, `printf("%d\\n", obter_elemento(&${list}, ${pos}));`);
+      }
+
+      // BUSCAR
+      if (current.type === "list_index") {
+        usedFunctions.buscar = true;
+
+        const value = current.getFieldValue("VALUE");
+        const list = current.getFieldValue("LIST");
+        code = addLine(code, `printf("%d\\n", buscar_posicao(&${list}, ${value}));`);
+      }
+
+      // SHOW
+      if (current.type === "show") {
+
+        let text = '""';
+        let value = "0";
+
+        const textBlock = current.getInputTargetBlock("TEXT");
+        const valueBlock = current.getInputTargetBlock("VALUE");
+
+        if (textBlock) {
+          const result = CGenerator.blockToCode(textBlock);
+          text = Array.isArray(result) ? result[0] : result;
+        }
+
+        if (valueBlock) {
+          const result = CGenerator.blockToCode(valueBlock);
+          value = Array.isArray(result) ? result[0] : result;
+        }
+
+        code = addLine(code, `printf("%s %d\\n", ${text}, ${value});`);
       }
 
       // IF
       if (current.type === "if") {
-        const condition = CGenerator.valueToCode(current, "CONDITION", CGenerator.ORDER_NONE) || "0";
+        console.log("entrou no if");
+        let conditionBlock = current.getInputTargetBlock("CONDITION");
 
+        let condition = "0";
+
+        if (conditionBlock) {
+          const result = CGenerator.blockToCode(conditionBlock);
+
+          if (Array.isArray(result)) {
+            condition = result[0];
+          } else {
+            condition = result;
+          }
+        }
         code = addLine(code, `if (${condition}) {`);
         indentLevel++;
 
@@ -61,7 +215,13 @@ export function cGenerator(workspace) {
 
       // IF ELSE
       if (current.type === "if_else") {
-        const condition = CGenerator.valueToCode(current, "CONDITION", CGenerator.ORDER_NONE) || "0";
+        let conditionBlock = current.getInputTargetBlock("CONDITION");
+        let condition = "0";
+
+        if (conditionBlock) {
+          const result = CGenerator.blockToCode(conditionBlock);
+          condition = Array.isArray(result) ? result[0] : result;
+        }
 
         code = addLine(code, `if (${condition}) {`);
         indentLevel++;
@@ -100,35 +260,91 @@ export function cGenerator(workspace) {
         code = addLine(code, `}`);
       }
 
+      // SORT
+      if (current.type === "sort_ascending") {
+        usedFunctions.ordenar_crescente = true;
+
+        const list = current.getFieldValue("LIST");
+        code = addLine(code, `ordenar_crescente(&${list});`);
+      }
+
+      if (current.type === "sort_descending") {
+        usedFunctions.ordenar_decrescente = true;
+
+        const list = current.getFieldValue("LIST");
+        code = addLine(code, `ordenar_decrescente(&${list});`);
+      }
+
+      // INVERT
+      if (current.type === "invert") {
+        usedFunctions.inverter = true;
+
+        const list = current.getFieldValue("LIST");
+        code = addLine(code, `inverter(&${list});`);
+      }
+
       current = current.getNextBlock();
     }
 
     return code;
   }
 
+  // 🔹 PEGA APENAS O run_program
   const blocks = workspace.getTopBlocks(true).filter(
-    block => block.type === "run_program"
+    (block) => block.type === "run_program"
   );
 
   if (!blocks || blocks.length === 0) return "";
 
-  let hasList = false;
-
-  blocks.forEach(block => {
-    let current = block.getInputTargetBlock("DO");
+  // 🔹 VERIFICA SE HÁ LISTA EM ALGUM LUGAR DO FLUXO
+  function containsList(block) {
+    let current = block;
 
     while (current) {
-      if (current.type === "list_container" || current.type === "list_fixed") {
-        hasList = true;
-        break;
+      if (
+        current.type === "list_container" ||
+        current.type === "list_fixed"
+      ) {
+        return true;
       }
+
+      if (current.type === "if") {
+        const doBlock = current.getInputTargetBlock("DO");
+        if (doBlock && containsList(doBlock)) return true;
+      }
+
+      if (current.type === "if_else") {
+        const doBlock = current.getInputTargetBlock("DO");
+        const elseBlock = current.getInputTargetBlock("ELSE");
+
+        if (doBlock && containsList(doBlock)) return true;
+        if (elseBlock && containsList(elseBlock)) return true;
+      }
+
+      if (current.type === "for_each") {
+        const doBlock = current.getInputTargetBlock("DO");
+        if (doBlock && containsList(doBlock)) return true;
+      }
+
       current = current.getNextBlock();
     }
-  });
+
+    return false;
+  }
+
+  let hasList = false;
+  for (const block of blocks) {
+    const first = block.getInputTargetBlock("DO");
+    if (first && containsList(first)) {
+      hasList = true;
+      break;
+    }
+  }
 
   if (!hasList) return "";
 
-  let header = `#include <stdio.h>
+  // 🔹 HEADER
+  const header = `#include <stdio.h>
 #include <stdlib.h>
 
 typedef struct Nodo {
@@ -143,171 +359,28 @@ typedef struct {
 
 `;
 
-  let functions = "";
+  // 🔹 PROCESSA APENAS UMA VEZ
   let main = "";
-
-  let usedFunctions = {
-    inicializar: false,
-    inserir: false,
-    remover_inicio: false,
-    remover_final: false,
-    remover_valor: false,
-    remover_posicao: false,
-    obter: false,
-    buscar: false,
-    inverter: false,
-    vazia: false,
-    ordenar_crescente: false,
-    ordenar_decrescente: false,
-    sublista: false,
-    size: 0
-  };
-
-  // 🔹 PROCESSAMENTO
-  blocks.forEach(block => {
-    let current = block.getInputTargetBlock("DO");
-
-    while (current) {
-
-      // LISTA
-      if (current.type === "list_container" || current.type === "list_fixed") {
-        const name = current.getFieldValue("NAME");
-
-        if (current.type === "list_fixed") {
-          usedFunctions.size = current.getFieldValue("SIZE");
-        }
-
-        usedFunctions.inicializar = true;
-
-        main = addLine(main, `Lista ${name};`);
-        main = addLine(main, `inicializar(&${name});`);
-      }
-
-      // INSERT
-      if (current.type === "insert") {
-        usedFunctions.inserir = true;
-
-        const value = current.getFieldValue("VALUE");
-        const list = current.getFieldValue("LIST");
-
-        main = addLine(main, `inserir_inicio(&${list}, ${value});`);
-      }
-
-      // REMOVE FIRST
-      if (current.type === "remove_first") {
-        usedFunctions.remover_inicio = true;
-        const list = current.getFieldValue("LIST");
-        main = addLine(main, `remover_inicio(&${list});`);
-      }
-
-      // REMOVE LAST
-      if (current.type === "remove_last") {
-        usedFunctions.remover_final = true;
-        const list = current.getFieldValue("LIST");
-        main = addLine(main, `remover_final(&${list});`);
-      }
-
-      // REMOVE ITEM
-      if (current.type === "remove_item") {
-        usedFunctions.remover_valor = true;
-        const value = current.getFieldValue("VALUE");
-        const list = current.getFieldValue("LIST");
-        main = addLine(main, `remover_valor(&${list}, ${value});`);
-      }
-
-      // REMOVE INDEX
-      if (current.type === "remove_index") {
-        usedFunctions.remover_posicao = true;
-        const index = current.getFieldValue("INDEX");
-        const list = current.getFieldValue("LIST");
-        main = addLine(main, `remover_posicao(&${list}, ${index});`);
-      }
-
-      // GET
-      if (current.type === "item_position") {
-        usedFunctions.obter = true;
-        const pos = current.getFieldValue("VALUE");
-        const list = current.getFieldValue("LIST");
-        main = addLine(main, `printf("%d\\n", obter_elemento(&${list}, ${pos}));`);
-      }
-
-      // BUSCAR
-      if (current.type === "list_index") {
-        usedFunctions.buscar = true;
-        const value = current.getFieldValue("VALUE");
-        const list = current.getFieldValue("LIST");
-        main = addLine(main, `printf("%d\\n", buscar_posicao(&${list}, ${value}));`);
-      }
-
-      if (current.type === "show") {
-          const text =
-            CGenerator.valueToCode(current, "TEXT", CGenerator.ORDER_NONE) || '""';
-
-          const value =
-            CGenerator.valueToCode(current, "VALUE", CGenerator.ORDER_NONE) || "0";
-
-          main = addLine(main, `printf(${text} " %d\\n", ${value});`);
-        }
-
-      // INVERTER
-      if (current.type === "invert") {
-        usedFunctions.inverter = true;
-        const list = current.getFieldValue("LIST");
-        main = addLine(main, `inverter(&${list});`);
-      }
-
-      // VAZIA
-      if (current.type === "is_empty") {
-        usedFunctions.vazia = true;
-        const list = current.getFieldValue("LIST");
-        main = addLine(main, `printf("%d\\n", esta_vazia(&${list}));`);
-      }
-
-      // SORT
-      if (current.type === "sort_ascending") {
-        usedFunctions.ordenar_crescente = true;
-        const list = current.getFieldValue("LIST");
-        main = addLine(main, `ordenar_crescente(&${list});`);
-      }
-
-      if (current.type === "sort_descending") {
-        usedFunctions.ordenar_decrescente = true;
-        const list = current.getFieldValue("LIST");
-        main = addLine(main, `ordenar_decrescente(&${list});`);
-      }
-
-      // SUBLISTA
-      if (current.type === "sublist") {
-        usedFunctions.sublista = true;
-        const start = current.getFieldValue("FIRST_VALUE");
-        const end = current.getFieldValue("SECOND_VALUE");
-        const list = current.getFieldValue("LIST");
-        main = addLine(main, `Lista sub = sublista(&${list}, ${start}, ${end});`);
-      }
-
-      // CONTROLE DE FLUXO
-      if (["if", "if_else", "for_each"].includes(current.type)) {
-        main += generateBlock(current);
-      }
-
-      current = current.getNextBlock();
+  for (const block of blocks) {
+    const first = block.getInputTargetBlock("DO");
+    if (first) {
+      main += generateBlock(first);
     }
-  });
+  }
 
-   // 🔹 INICIALIZAR
-if (usedFunctions.inicializar) {
-functions += `
+  // 🔹 FUNÇÕES DINÂMICAS
+  if (usedFunctions.inicializar) {
+    functions += `
 void inicializar(Lista *l) {
     l->inicio = NULL;
     l->tamanho = ${usedFunctions.size};
 }
 
 `;
-}
+  }
 
-// 🔹 INSERIR
-if (usedFunctions.inserir) {
-functions += `
+  if (usedFunctions.inserir) {
+    functions += `
 void inserir_inicio(Lista *l, int valor) {
     Nodo *novo = (Nodo*) malloc(sizeof(Nodo));
     novo->dado = valor;
@@ -317,11 +390,10 @@ void inserir_inicio(Lista *l, int valor) {
 }
 
 `;
-}
+  }
 
-// 🔹 REMOVER PRIMEIRO
-if (usedFunctions.remover_inicio) {
-functions += `
+  if (usedFunctions.remover_inicio) {
+    functions += `
 void remover_inicio(Lista *l) {
     if (l->inicio == NULL) return;
 
@@ -332,11 +404,10 @@ void remover_inicio(Lista *l) {
 }
 
 `;
-}
+  }
 
-// 🔹 REMOVER ÚLTIMO
-if (usedFunctions.remover_final) {
-functions += `
+  if (usedFunctions.remover_final) {
+    functions += `
 void remover_final(Lista *l) {
     if (l->inicio == NULL) return;
 
@@ -359,11 +430,10 @@ void remover_final(Lista *l) {
 }
 
 `;
-}
+  }
 
-// 🔹 REMOVER POR VALOR
-if (usedFunctions.remover_valor) {
-functions += `
+  if (usedFunctions.remover_valor) {
+    functions += `
 void remover_valor(Lista *l, int valor) {
     Nodo *atual = l->inicio;
     Nodo *anterior = NULL;
@@ -386,11 +456,10 @@ void remover_valor(Lista *l, int valor) {
 }
 
 `;
-}
+  }
 
-// 🔹 REMOVER POR POSIÇÃO
-if (usedFunctions.remover_posicao) {
-functions += `
+  if (usedFunctions.remover_posicao) {
+    functions += `
 void remover_posicao(Lista *l, int pos) {
     Nodo *atual = l->inicio;
     Nodo *anterior = NULL;
@@ -413,11 +482,10 @@ void remover_posicao(Lista *l, int pos) {
 }
 
 `;
-}
+  }
 
-// 🔹 OBTER ELEMENTO
-if (usedFunctions.obter) {
-functions += `
+  if (usedFunctions.obter) {
+    functions += `
 int obter_elemento(Lista *l, int pos) {
     Nodo *aux = l->inicio;
 
@@ -430,11 +498,10 @@ int obter_elemento(Lista *l, int pos) {
 }
 
 `;
-}
+  }
 
-// 🔹 BUSCAR POSIÇÃO
-if (usedFunctions.buscar) {
-functions += `
+  if (usedFunctions.buscar) {
+    functions += `
 int buscar_posicao(Lista *l, int valor) {
     Nodo *aux = l->inicio;
     int pos = 1;
@@ -449,21 +516,19 @@ int buscar_posicao(Lista *l, int valor) {
 }
 
 `;
-}
+  }
 
-// 🔹 LISTA VAZIA
-if (usedFunctions.vazia) {
-functions += `
+  if (usedFunctions.vazia) {
+    functions += `
 int esta_vazia(Lista *l) {
     return l->tamanho == 0;
 }
 
 `;
-}
+  }
 
-// 🔹 INVERTER LISTA
-if (usedFunctions.inverter) {
-functions += `
+  if (usedFunctions.inverter) {
+    functions += `
 void inverter(Lista *l) {
     Nodo *prev = NULL;
     Nodo *current = l->inicio;
@@ -479,11 +544,10 @@ void inverter(Lista *l) {
     l->inicio = prev;
 }
 `;
-}
+  }
 
-// 🔹 SORT CRESCENTE
-if (usedFunctions.ordenar_crescente) {
-functions += `
+  if (usedFunctions.ordenar_crescente) {
+    functions += `
 void ordenar_crescente(Lista *l) {
     if (l->inicio == NULL) return;
 
@@ -505,11 +569,10 @@ void ordenar_crescente(Lista *l) {
     }
 }
 `;
-}
+  }
 
-// 🔹 SORT DECRESCENTE
-if (usedFunctions.ordenar_decrescente) {
-functions += `
+  if (usedFunctions.ordenar_decrescente) {
+    functions += `
 void ordenar_decrescente(Lista *l) {
     if (l->inicio == NULL) return;
 
@@ -531,10 +594,10 @@ void ordenar_decrescente(Lista *l) {
     }
 }
 `;
-}
+  }
 
-if (usedFunctions.sublista) {
-functions += `
+  if (usedFunctions.sublista) {
+    functions += `
 Lista sublista(Lista *l, int inicio, int fim) {
     Lista nova;
     nova.inicio = NULL;
@@ -561,7 +624,7 @@ Lista sublista(Lista *l, int inicio, int fim) {
     return nova;
 }
 `;
-}
+  }
 
   return header + functions + "\nint main() {\n" + main + "    return 0;\n}";
 }

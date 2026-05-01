@@ -38,7 +38,7 @@ export function executeCode(code, structure) {
     ];
   }
 
-  // 🔥 bloco existe mas está vazio
+  // 🔥 bloco vazio
   const runContent = code.split("// INICIAR_EXECUCAO")[1]?.split("// FIM_EXECUCAO")[0];
 
   if (!runContent || runContent.trim() === "") {
@@ -52,15 +52,14 @@ export function executeCode(code, structure) {
   }
 
   const linesInsideRun = runContent
-  .split("\n")
-  .map(line => line.trim())
-  .filter(Boolean);
+    .split("\n")
+    .map(line => line.trim())
+    .filter(Boolean);
 
   let hasListCreation = false;
 
   for (const line of linesInsideRun) {
 
-    // 🔥 criação de lista
     if (
       line.includes("list_container") ||
       line.includes("list_fixed")
@@ -68,7 +67,6 @@ export function executeCode(code, structure) {
       hasListCreation = true;
     }
 
-    // 🔥 TODAS operações reais de lista
     const isListOperation =
       line.includes("insert(") ||
       line.includes("remove_last(") ||
@@ -80,7 +78,6 @@ export function executeCode(code, structure) {
       line.includes("sort_ascending(") ||
       line.includes("sort_descending(");
 
-    // ❌ erro: usou antes de criar
     if (isListOperation && !hasListCreation) {
       return [
         {
@@ -96,6 +93,10 @@ export function executeCode(code, structure) {
 
   const lines = code.split("\n");
   let isRunning = false;
+
+  // 🔥 CONTROLE DE IF
+  let shouldExecute = true;
+  let conditionStack = [];
 
   lines.forEach(line => {
 
@@ -113,6 +114,55 @@ export function executeCode(code, structure) {
 
     if (!isRunning) return;
 
+    // ======================
+    // 🔥 IF
+    // ======================
+    if (line.startsWith("if")) {
+      const condition = line.match(/if\s*\((.*)\)/)?.[1];
+
+      let result = false;
+
+      try {
+        result = eval(condition);
+      } catch {
+        result = false;
+      }
+
+      conditionStack.push(result);
+      shouldExecute = result;
+      return;
+    }
+
+    // ======================
+    // 🔥 ELSE
+    // ======================
+    if (line.startsWith("} else {")) {
+      const last = conditionStack.pop();
+      const result = !last;
+
+      conditionStack.push(result);
+      shouldExecute = result;
+      return;
+    }
+
+    // ======================
+    // 🔥 FECHAMENTO }
+    // ======================
+    if (line === "}") {
+      conditionStack.pop();
+      shouldExecute =
+        conditionStack.length === 0
+          ? true
+          : conditionStack[conditionStack.length - 1];
+      return;
+    }
+
+    // ❌ não executa se condição falsa
+    if (!shouldExecute) return;
+
+    // ======================
+    // 🔥 COMANDOS NORMAIS
+    // ======================
     const match = line.match(/(\w+)\((.*?)\)/);
     if (!match) return;
 
