@@ -165,3 +165,18 @@ javascriptGenerator.forBlock['run_program'] = function (block) {
 
   return `// INICIAR_EXECUCAO\n${statements}// FIM_EXECUCAO\n`;
 };
+
+javascriptGenerator.forBlock['show'] = function (block) {
+
+  const text =
+    javascriptGenerator.valueToCode(block, "TEXT", javascriptGenerator.ORDER_NONE) || '""';
+
+  const value =
+    javascriptGenerator.valueToCode(block, "VALUE", javascriptGenerator.ORDER_NONE) || "0";
+  return `exibir(${text}, ${value});\n`;
+};
+
+javascriptGenerator.forBlock['text'] = function (block) {
+  const text = block.getFieldValue('TEXT');
+  return [`"${text}"`, javascriptGenerator.ORDER_NONE];
+};

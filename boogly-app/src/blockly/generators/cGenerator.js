@@ -2,14 +2,16 @@ import { Generator } from "blockly";
 
 export const CGenerator = new Generator("C");
 
-let hasList = false;
-
 // 🔹 EXPRESSÕES
 CGenerator.forBlock['compare'] = function(block) {
   const a = CGenerator.valueToCode(block, 'A', CGenerator.ORDER_NONE) || "0";
   const b = CGenerator.valueToCode(block, 'B', CGenerator.ORDER_NONE) || "0";
   const op = block.getFieldValue('OP');
   return [`${a} ${op} ${b}`, CGenerator.ORDER_NONE];
+};
+
+CGenerator.forBlock['variable'] = function(block) {
+  return [block.getFieldValue('VAR'), CGenerator.ORDER_NONE];
 };
 
 CGenerator.forBlock['variable'] = function(block) {
@@ -236,6 +238,16 @@ typedef struct {
         const list = current.getFieldValue("LIST");
         main = addLine(main, `printf("%d\\n", buscar_posicao(&${list}, ${value}));`);
       }
+
+      if (current.type === "show") {
+          const text =
+            CGenerator.valueToCode(current, "TEXT", CGenerator.ORDER_NONE) || '""';
+
+          const value =
+            CGenerator.valueToCode(current, "VALUE", CGenerator.ORDER_NONE) || "0";
+
+          main = addLine(main, `printf(${text} " %d\\n", ${value});`);
+        }
 
       // INVERTER
       if (current.type === "invert") {

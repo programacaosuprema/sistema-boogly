@@ -406,5 +406,11 @@ export class ListSimulator {
 
     return sub;
   }
+  show(texto, valor) {
+  this.steps.push({
+    type: "print",
+    message: `${texto} ${valor}`,
+    state: this.getState()
+  });
 }
-
+}

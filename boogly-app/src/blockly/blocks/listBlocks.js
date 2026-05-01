@@ -190,8 +190,8 @@ Blockly.Blocks['size'] = {
     this.appendDummyInput()
       .appendField("tamanho de")
       .appendField(new Blockly.FieldDropdown(() => getLists(this.workspace)), "LIST");
-
-    this.setOutput(true, "Number");
+    this.setPreviousStatement(true);
+    this.setNextStatement(true);
     this.setColour(200);
   }
 };
@@ -206,7 +206,8 @@ Blockly.Blocks['is_empty'] = {
       .appendField(new Blockly.FieldDropdown(() => getLists(this.workspace)), "LIST")
       .appendField("está vazia");
 
-    this.setOutput(true, "Boolean");
+    this.setPreviousStatement(true);
+    this.setNextStatement(true);
     this.setColour(200);
   }
 };
@@ -222,6 +223,30 @@ Blockly.Blocks['item_position'] = {
     this.setPreviousStatement(true);
     this.setNextStatement(true);
     this.setColour(200);
+  }
+};
+
+Blockly.Blocks['show'] = {
+  init: function () {
+
+    this.appendValueInput("TEXT")
+      .setCheck("String")
+      .appendField("exibir");
+
+    this.appendDummyInput()
+      .appendField("+");
+
+    this.appendValueInput("VALUE");
+
+    this.setInputsInline(true); // 🔥 ISSO AQUI FAZ FICAR EM LINHA
+
+    this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+
+    this.setColour(270); // roxo parecido com a imagem
+
+    this.setTooltip("Exibe texto + valor");
+    this.setHelpUrl("");
   }
 };
 
@@ -362,9 +387,25 @@ Blockly.Blocks['compare'] = {
 Blockly.Blocks['variable'] = {
   init: function () {
     this.appendDummyInput()
-      .appendField(new Blockly.FieldTextInput("item"), "VAR");
+      .appendField(new Blockly.FieldTextInput("variável"), "VAR");
 
     this.setOutput(true);
     this.setColour(60);
+  }
+};
+
+Blockly.Blocks['text'] = {
+  init: function () {
+    this.appendDummyInput()
+      .appendField('"')
+      .appendField(new Blockly.FieldTextInput("texto"), "TEXT")
+      .appendField('"');
+
+    this.setOutput(true, "String"); // 🔥 IMPORTANTE
+
+    this.setColour(160); // pode ajustar depois
+
+    this.setTooltip("Texto");
+    this.setHelpUrl("");
   }
 };

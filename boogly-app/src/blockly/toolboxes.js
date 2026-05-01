@@ -41,7 +41,9 @@ export const toolboxCategories = {
       { kind: "block", type: "is_empty" },
       { kind: "block", type: "size" },
       { kind: "block", type: "list_index" },
-      { kind: "block", type: "item_position" }
+      { kind: "block", type: "item_position" },
+      { kind: "block", type: "show" }
+
     ]
   },
 
@@ -59,6 +61,8 @@ export const toolboxCategories = {
     kind: "flyoutToolbox",
     contents: [
       { kind: "block", type: "variable" },
+      { kind: "block", type: "text" },
+
     ]
   },
 
