@@ -16,7 +16,7 @@ import { cGenerator } from "../../blockly/generators/cGenerator";
 
 import { useTheme } from "../../theme/useTheme";
 
-export default function BlocklyEditor({ toolbox, setCode, setCCode }) {
+export default function BlocklyEditor({ toolbox, setCode, setCCode, setBlockCount, blockCount }) {
   const blocklyDiv = useRef(null);
   const workspaceRef = useRef(null);
   const debounceRef = useRef(null);
@@ -45,7 +45,7 @@ export default function BlocklyEditor({ toolbox, setCode, setCCode }) {
           wheel: true,
         },
       });
-
+      
       workspaceRef.current.addChangeListener((event) => {
         if (event.isUiEvent) return;
 
@@ -61,6 +61,12 @@ export default function BlocklyEditor({ toolbox, setCode, setCCode }) {
             const codeC = cGenerator(workspaceRef.current);
             setCCode(codeC);
 
+            // 🔥 CONTAGEM DE BLOCOS
+            if (setBlockCount) {
+              const count = workspaceRef.current.getAllBlocks(false).length;
+              setBlockCount(count);
+            }
+
           } catch (err) {
             console.error("Erro ao gerar código:", err);
           }
@@ -72,10 +78,12 @@ export default function BlocklyEditor({ toolbox, setCode, setCCode }) {
       setInitError(true);
     }
 
+    
+
     return () => {
       workspaceRef.current?.dispose();
     };
-  }, [setCCode, setCode, theme.border, toolbox]);
+  }, [setBlockCount, setCCode, setCode, theme.border, toolbox]);
 
   // 🔥 ATUALIZA TOOLBOX
   useEffect(() => {
@@ -214,34 +222,51 @@ export default function BlocklyEditor({ toolbox, setCode, setCCode }) {
       <div className="flex-1 flex flex-col">
 
         {/* HEADER */}
-        <div
-          className="px-4 py-3 flex justify-between items-center border-b"
-          style={{
-            background: theme.header,
-            borderColor: theme.border,
-            color: theme.text
-          }}
-        >
-          <div className="flex items-center gap-3">
-            <div
-              className="px-4 py-2 rounded-full font-semibold"
-              style={{
-                background: theme.primary,
-                color: "#fff"
-              }}
-            >
-              Área de Programação
-            </div>
+      <div
+        className="px-4 py-3 flex justify-between items-center border-b"
+        style={{
+          background: theme.header,
+          borderColor: theme.border,
+          color: theme.text
+        }}
+      >
+        <div className="flex items-center gap-3">
 
-            <span style={{ color: theme.muted }}>
-              arraste e conecte os blocos
-            </span>
+          <div
+            className="px-4 py-2 rounded-full font-semibold"
+            style={{
+              background: theme.primary,
+              color: "#fff"
+            }}
+          >
+            Área de Programação
           </div>
+
+          <span style={{ color: theme.muted }}>
+            arraste e conecte os blocos
+          </span>
+
         </div>
+      </div>
 
         {/* BLOCKLY */}
-        <div className="flex-1">
+        <div className="flex-1 relative">
+
+          {/* 🧩 CONTADOR */}
+          <div
+            className="absolute top-3 right-3 px-3 py-2 rounded-lg text-sm font-semibold shadow z-10"
+            style={{
+              background: theme.card,
+              color: theme.text,
+              border: `1px solid ${theme.border}`
+            }}
+          >
+            🧩 {blockCount} blocos
+          </div>
+
+          {/* BLOCKLY */}
           <div ref={blocklyDiv} className="h-full w-full" />
+
         </div>
 
       </div>

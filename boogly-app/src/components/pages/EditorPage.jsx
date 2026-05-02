@@ -64,6 +64,8 @@ export default function EditorPage() {
   const runEngine = engines[structure];
   const SimulatorComponent = simulators[structure];
 
+  const [blockCount, setBlockCount] = useState(0);
+
   // 🔥 EXECUÇÃO AUTOMÁTICA
   useEffect(() => {
     if (!isRunning) return;
@@ -191,6 +193,8 @@ export default function EditorPage() {
             toolbox={currentToolbox}
             setCode={setCode}
             setCCode={setCCode}
+            setBlockCount={setBlockCount}
+            blockCount={blockCount}
           />
         </section>
 
