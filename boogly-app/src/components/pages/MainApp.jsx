@@ -1,5 +1,5 @@
 import { Outlet } from "react-router-dom";
-import Header from "../panels/Header";
+import Header from "../panels/HeaderPanel";
 import { useAuth } from "../../autenticator/useAuth";
 import { useTheme } from "../../theme/useTheme";
 

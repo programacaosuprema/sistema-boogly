@@ -1,31 +1,80 @@
 import { useEffect, useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
+
 import { AppContext } from "../../app_configuration/AppContext";
 import { LoadingPage } from "../pages/LoadingPage";
+import { ErrorPage } from "../pages/ErrorPage";
+
 import { useTheme } from "../../theme/useTheme";
+import { useError } from "../../error/useError";
 
 export default function ChallengePage() {
   const [challenges, setChallenges] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
 
   const { domainUrl } = useContext(AppContext);
   const { theme } = useTheme();
+  const { showError } = useError();
 
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetch(`${domainUrl}/challenges`, {
-      headers: {
-        Authorization: "Bearer TOKEN_AQUI"
-      }
-    })
-      .then(res => res.json())
-      .then(data => {
-        setChallenges(data || []);
+    async function loadChallenges() {
+      try {
+        const res = await fetch(`${domainUrl}/challenges`, {
+          headers: {
+            Authorization: "Bearer TOKEN_AQUI"
+          }
+        });
+
+        if (!res.ok) {
+          throw new Error("Erro ao carregar desafios");
+        }
+
+        const data = await res.json();
+
+        if (!Array.isArray(data)) {
+          throw new Error("Formato inválido da resposta");
+        }
+
+        setChallenges(data);
+
+      } catch (err) {
+        console.error(err);
+
+        showError(err); // 🔥 toast global
+        setHasError(true);
+
+      } finally {
         setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, [domainUrl]);
+      }
+    }
+
+    loadChallenges();
+  }, [domainUrl, showError]);
+
+  // 🔥 LOADING
+  if (loading) return <LoadingPage />;
+
+  // 🔥 ERRO DE TELA (CORRETO)
+  if (hasError) {
+    return (
+      <ErrorPage message="Não foi possível carregar os desafios." />
+    );
+  }
+
+  // 🔥 LISTA VAZIA
+  if (challenges.length === 0) {
+    return (
+      <div
+        className="h-full flex items-center justify-center"
+        style={{ color: theme.muted }}
+      >
+        Nenhum desafio encontrado
+      </div>
+    );
+  }
 
   // 🔥 STATUS
   function getStatusUI(status) {
@@ -111,21 +160,6 @@ export default function ChallengePage() {
     }
   }
 
-  if (loading) {
-    return <LoadingPage />;
-  }
-
-  if (challenges.length === 0) {
-    return (
-      <div
-        className="h-full flex items-center justify-center"
-        style={{ color: theme.muted }}
-      >
-        Nenhum desafio encontrado
-      </div>
-    );
-  }
-
   return (
     <div
       className="h-full p-4 flex flex-col"
@@ -134,6 +168,7 @@ export default function ChallengePage() {
         color: theme.text
       }}
     >
+
       {/* HEADER */}
       <div className="mb-6">
 
@@ -144,17 +179,21 @@ export default function ChallengePage() {
             background: theme.card,
             color: theme.text
           }}
-          onMouseEnter={(e) => e.target.style.background = theme.hover}
-          onMouseLeave={(e) => e.target.style.background = theme.card}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.background = theme.hover)
+          }
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.background = theme.card)
+          }
         >
           ← Voltar
         </button>
 
-        <h2 className="text-2xl font-bold" style={{ color: theme.text }}>
+        <h2 className="text-2xl font-bold">
           Desafios
         </h2>
 
-        <p className="text-sm" style={{ color: theme.muted }}>
+        <p style={{ color: theme.muted }}>
           Resolva problemas e evolua suas habilidades
         </p>
       </div>
@@ -167,7 +206,7 @@ export default function ChallengePage() {
         <div className="h-full overflow-x-auto">
           <div className="min-w-[900px]">
 
-            {/* HEADER TABELA */}
+            {/* HEADER */}
             <div
               className="grid grid-cols-6 px-6 py-3 text-sm border-b"
               style={{
@@ -227,6 +266,7 @@ export default function ChallengePage() {
           </div>
         </div>
       </div>
+
     </div>
   );
 }

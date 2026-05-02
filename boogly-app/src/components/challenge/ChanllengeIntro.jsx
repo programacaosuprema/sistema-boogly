@@ -1,11 +1,34 @@
 import { useState } from "react";
 import { useTheme } from "../../theme/useTheme";
+import { useError } from "../../error/useError";
 
 export function ChallengeIntro({ challenge, onStart }) {
   const [tab, setTab] = useState("descricao");
   const { theme } = useTheme();
+  const { showError } = useError();
 
-  const test = challenge.testCases[0];
+  // 🔒 SEGURANÇA
+  if (!challenge) {
+    return (
+      <div
+        className="flex items-center justify-center h-full"
+        style={{ color: theme.warning }}
+      >
+        ⚠️ Desafio inválido
+      </div>
+    );
+  }
+
+  const test = challenge.testCases?.[0] || null;
+
+  function handleStart() {
+    if (!onStart) {
+      showError({ message: "Não foi possível iniciar o desafio" });
+      return;
+    }
+
+    onStart();
+  }
 
   return (
     <div
@@ -29,7 +52,7 @@ export function ChallengeIntro({ challenge, onStart }) {
             color: "#fff"
           }}
         >
-          {challenge.title}
+          {challenge.title || "Desafio"}
         </div>
 
         {/* TABS */}
@@ -66,11 +89,8 @@ export function ChallengeIntro({ challenge, onStart }) {
 
           {/* DESCRIÇÃO */}
           {tab === "descricao" && (
-            <p
-              className="leading-relaxed line-clamp-4"
-              style={{ color: theme.text }}
-            >
-              {challenge.description}
+            <p className="leading-relaxed">
+              {challenge.description || "Sem descrição disponível."}
             </p>
           )}
 
@@ -78,37 +98,45 @@ export function ChallengeIntro({ challenge, onStart }) {
           {tab === "entrada" && (
             <div className="space-y-3">
 
-              <div>
-                <span style={{ color: theme.text }} className="font-semibold">
-                  Entrada:
-                </span>
+              {test ? (
+                <>
+                  <div>
+                    <span className="font-semibold">
+                      Entrada:
+                    </span>
 
-                <div
-                  className="mt-1 p-2 rounded text-xs break-words"
-                  style={{
-                    background: theme.primary,
-                    color: "#fff"
-                  }}
-                >
-                  {JSON.stringify(test.input)}
-                </div>
-              </div>
+                    <div
+                      className="mt-1 p-2 rounded text-xs break-words"
+                      style={{
+                        background: theme.primary,
+                        color: "#fff"
+                      }}
+                    >
+                      {JSON.stringify(test.input)}
+                    </div>
+                  </div>
 
-              <div>
-                <span style={{ color: theme.text }} className="font-semibold">
-                  Saída:
-                </span>
+                  <div>
+                    <span className="font-semibold">
+                      Saída:
+                    </span>
 
-                <div
-                  className="mt-1 p-2 rounded text-xs break-words"
-                  style={{
-                    background: theme.warning,
-                    color: "#000"
-                  }}
-                >
-                  {JSON.stringify(test.expectedOutput)}
-                </div>
-              </div>
+                    <div
+                      className="mt-1 p-2 rounded text-xs break-words"
+                      style={{
+                        background: theme.warning,
+                        color: "#000"
+                      }}
+                    >
+                      {JSON.stringify(test.expectedOutput)}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <p style={{ color: theme.muted }}>
+                  Nenhum exemplo disponível.
+                </p>
+              )}
 
             </div>
           )}
@@ -116,17 +144,18 @@ export function ChallengeIntro({ challenge, onStart }) {
           {/* REGRAS */}
           {tab === "regras" && (
             <ul className="space-y-2 text-xs">
-              {challenge.rules.map((r, i) => (
-                <li key={i} className="flex gap-2 items-start">
-                  <span style={{ color: theme.success }}>✔</span>
-                  <span
-                    className="truncate"
-                    style={{ color: theme.text }}
-                  >
-                    {r.description}
-                  </span>
-                </li>
-              ))}
+              {(challenge.rules || []).length > 0 ? (
+                challenge.rules.map((r, i) => (
+                  <li key={i} className="flex gap-2 items-start">
+                    <span style={{ color: theme.success }}>✔</span>
+                    <span>{r.description}</span>
+                  </li>
+                ))
+              ) : (
+                <p style={{ color: theme.muted }}>
+                  Nenhuma regra definida.
+                </p>
+              )}
             </ul>
           )}
 
@@ -138,17 +167,17 @@ export function ChallengeIntro({ challenge, onStart }) {
           style={{ borderColor: theme.border }}
         >
           <button
-            onClick={onStart}
+            onClick={handleStart}
             className="px-5 py-2 rounded-lg font-semibold transition"
             style={{
               background: theme.primary,
               color: "#fff"
             }}
             onMouseEnter={(e) =>
-              (e.target.style.background = theme.hover)
+              (e.currentTarget.style.background = theme.hover)
             }
             onMouseLeave={(e) =>
-              (e.target.style.background = theme.primary)
+              (e.currentTarget.style.background = theme.primary)
             }
           >
             Começar desafio

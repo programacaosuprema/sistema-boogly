@@ -1,7 +1,6 @@
 import { useApp } from "../../app_configuration/useApp";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../autenticator/useAuth";
-import { useLocation } from "react-router-dom";
 import { useTheme } from "../../theme/useTheme";
 import ActionButton from "../../components/ui/ActionButton";
 import { LogOut, Trophy, Target, Star } from "lucide-react";
@@ -13,18 +12,29 @@ const STRUCTURE_LABELS = {
 };
 
 export default function Header({ structure }) {
-  const { theme, themeName, setThemeName } = useTheme();
+  const { theme, themeName = "dark", setThemeName } = useTheme();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const mode = STRUCTURE_LABELS[structure] || "Lista";
   const { appName } = useApp();
   const location = useLocation();
 
+  const mode = STRUCTURE_LABELS[structure] || "Lista";
   const isChallengePage = location.pathname.startsWith("/app/challenges");
 
-  function handleLogout() {
-    logout();
-    navigate("/");
+  // 🔒 nickname seguro
+  const nickname = user?.nickname
+    ? user.nickname.toUpperCase()
+    : "VISITANTE";
+
+  const points = user?.points ?? 0;
+
+  async function handleLogout() {
+    try {
+      await logout();
+      navigate("/", { replace: true });
+    } catch (err) {
+      console.error("Erro ao sair:", err);
+    }
   }
 
   return (
@@ -35,71 +45,78 @@ export default function Header({ structure }) {
         color: theme.text
       }}
     >
-      {/* 🔥 ESQUERDA → LOGO */}
+
+      {/* 🔥 ESQUERDA */}
       <div className="flex items-center gap-3">
+
         <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-blue-500 rounded-md" />
-        <h1
-          className="text-lg font-semibold"
-          style={{ color: theme.text }}
-        >
-          {appName.toUpperCase()}
+
+        <h1 className="text-lg font-semibold">
+          {(appName || "APP").toUpperCase()}
         </h1>
+
       </div>
 
       {/* 🔥 DIREITA */}
       <div className="flex items-center gap-3">
 
-        {/* PLAYER */}
-        <span style={{ color: theme.text }}>
-          {user ? `👤 ${user.nickname.toUpperCase()}` : "Não logado"}
+        {/* 👤 USER */}
+        <span>
+          👤 {nickname}
         </span>
 
-        {/* MODO */}
+        {/* 🎮 MODO */}
         <div
           className="px-4 py-2 rounded-full text-sm"
           style={{
             background: theme.card,
-            color: theme.text
+            border: `1px solid ${theme.border}`
           }}
         >
           modo: <span className="font-semibold">{mode}</span>
         </div>
 
-        {/* PONTOS */}
+        {/* ⭐ PONTOS */}
         <div
           className="flex items-center gap-2 px-4 py-2 rounded-full text-sm"
           style={{
             background: theme.card,
-            color: theme.text
+            border: `1px solid ${theme.border}`
           }}
         >
           <Star className="w-4 h-4" style={{ color: theme.warning }} />
-          {user?.points ?? 0} pontos
+          {points} pontos
         </div>
 
-        {/* DESAFIOS */}
+        {/* 🎯 DESAFIOS */}
         {!isChallengePage && (
           <ActionButton
-            onClick={() => navigate("/app/challenges", { state: { structure } })}
+            onClick={() =>
+              navigate("/app/challenges", { state: { structure } })
+            }
             icon={Target}
           >
             desafios {mode.toLowerCase()}
           </ActionButton>
         )}
 
-        {/* RANKING */}
-        <ActionButton icon={Trophy}>
+        {/* 🏆 RANKING */}
+        <ActionButton
+          icon={Trophy}
+          onClick={() => navigate("/app/ranking")}
+        >
           ranking
         </ActionButton>
 
-        {/* THEME SELECT */}
+        {/* 🎨 THEME */}
         <select
           value={themeName}
           onChange={(e) => setThemeName(e.target.value)}
-          className="text-sm px-3 py-1 rounded-lg"
+          className="text-sm px-3 py-1 rounded-lg outline-none"
           style={{
             background: theme.toolbox,
-            color: theme.text
+            color: theme.text,
+            border: `1px solid ${theme.border}`
           }}
         >
           <option value="light">🌞 Claro</option>
@@ -107,7 +124,7 @@ export default function Header({ structure }) {
           <option value="colorful">🎨 Colorido</option>
         </select>
 
-        {/* LOGOUT */}
+        {/* 🚪 LOGOUT */}
         <ActionButton
           onClick={handleLogout}
           icon={LogOut}

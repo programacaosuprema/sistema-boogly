@@ -3,8 +3,11 @@ import { useParams, useNavigate } from "react-router-dom";
 
 import { ChallengeIntro } from "./ChanllengeIntro";
 import { LoadingPage } from "../pages/LoadingPage";
+import { ErrorPage } from "../pages/ErrorPage";
+
 import { AppContext } from "../../app_configuration/AppContext";
 import { useTheme } from "../../theme/useTheme";
+import { useError } from "../../error/useError";
 
 export default function ChallengeDetail() {
   const { id } = useParams();
@@ -16,6 +19,7 @@ export default function ChallengeDetail() {
 
   const { domainUrl } = useContext(AppContext);
   const { theme } = useTheme();
+  const { showError } = useError();
 
   const navigate = useNavigate();
 
@@ -23,18 +27,33 @@ export default function ChallengeDetail() {
     async function loadChallenge() {
       try {
         const res = await fetch(`${domainUrl}/challenges/${id}`);
+
+        if (!res.ok) {
+          throw new Error("Erro ao carregar desafio");
+        }
+
         const data = await res.json();
+
+        if (!data) {
+          throw new Error("Desafio não encontrado");
+        }
+
         setChallenge(data);
+
       } catch (err) {
         console.error(err);
+
+        showError(err); // 🔥 toast global
+
         setChallenge(null);
+
       } finally {
         setLoading(false);
       }
     }
 
     loadChallenge();
-  }, [domainUrl, id]);
+  }, [domainUrl, id, showError]);
 
   // 🔥 loading inicial
   if (loading) return <LoadingPage />;
@@ -42,14 +61,10 @@ export default function ChallengeDetail() {
   // 🔥 loading ao iniciar desafio
   if (starting) return <LoadingPage />;
 
+  // 🔥 ERRO DA TELA (aqui é o lugar certo)
   if (!challenge) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center"
-        style={{ color: theme.danger }}
-      >
-        Desafio não encontrado
-      </div>
+      <ErrorPage message="Não foi possível carregar o desafio." />
     );
   }
 

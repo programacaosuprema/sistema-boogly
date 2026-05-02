@@ -1,7 +1,24 @@
 import { useTheme } from "../../theme/useTheme";
 
-export function ChallengeResult({ result, attempts }) {
+export function ChallengeResult({ result, attempts, onNext }) {
   const { theme } = useTheme();
+
+  // 🔒 SEGURANÇA
+  if (!result) {
+    return (
+      <div
+        className="p-6 rounded-xl"
+        style={{
+          background: `${theme.warning}15`,
+          border: `1px solid ${theme.warning}`
+        }}
+      >
+        <p style={{ color: theme.text }}>
+          ⚠️ Nenhum resultado disponível
+        </p>
+      </div>
+    );
+  }
 
   function calculateStars(result, attempts) {
     if (!result.success) return 0;
@@ -63,6 +80,7 @@ export function ChallengeResult({ result, attempts }) {
 
         {/* 🚀 BOTÃO */}
         <button
+          onClick={onNext}
           className="mt-4 px-4 py-2 rounded font-semibold transition"
           style={{
             background: theme.primary,
@@ -82,8 +100,9 @@ export function ChallengeResult({ result, attempts }) {
     );
   }
 
-  // ❌ ERRO
-  const failed = result.results.find(r => !r.passed);
+  // ❌ ERRO (SEGURO)
+  const failed =
+    result.results?.find(r => !r.passed) || null;
 
   return (
     <div
@@ -101,20 +120,28 @@ export function ChallengeResult({ result, attempts }) {
         ❌ Algo deu errado...
       </h2>
 
-      <p style={{ color: theme.text }}>
-        <strong>Entrada:</strong>{" "}
-        {JSON.stringify(failed.input)}
-      </p>
+      {failed ? (
+        <>
+          <p style={{ color: theme.text }}>
+            <strong>Entrada:</strong>{" "}
+            {JSON.stringify(failed.input)}
+          </p>
 
-      <p style={{ color: theme.text }}>
-        <strong>Esperado:</strong>{" "}
-        {JSON.stringify(failed.expected)}
-      </p>
+          <p style={{ color: theme.text }}>
+            <strong>Esperado:</strong>{" "}
+            {JSON.stringify(failed.expected)}
+          </p>
 
-      <p style={{ color: theme.text }}>
-        <strong>Recebido:</strong>{" "}
-        {JSON.stringify(failed.output)}
-      </p>
+          <p style={{ color: theme.text }}>
+            <strong>Recebido:</strong>{" "}
+            {JSON.stringify(failed.output)}
+          </p>
+        </>
+      ) : (
+        <p style={{ color: theme.text }}>
+          Não foi possível identificar o erro da execução.
+        </p>
+      )}
 
     </div>
   );

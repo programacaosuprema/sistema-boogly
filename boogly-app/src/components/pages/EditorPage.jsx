@@ -8,28 +8,32 @@ import QueueVisualizer from "../simulator/QueueVisualizer";
 
 import CodePanel from "../panels/CodePanel";
 import { useAuth } from "../../autenticator/useAuth";
+import { useTheme } from "../../theme/useTheme";
+import { useError } from "../../error/useError";
 
 import { runStack } from "../simulator/engines/stackEngine";
 import { runQueue } from "../simulator/engines/queueEngine";
 import { runList } from "../simulator/engines/listEngine";
 
-import { useTheme } from "../../theme/useTheme";
-
-
-import { stackToolbox, queueToolbox, toolboxCategories } from "../../blockly/toolboxes";
-
+import {
+  stackToolbox,
+  queueToolbox,
+  toolboxCategories
+} from "../../blockly/toolboxes";
 
 export default function EditorPage() {
   const { theme } = useTheme();
+  const { showError } = useError();
   const historyRef = useRef(null);
 
   const { structure } = useAuth();
+
   const [code, setCode] = useState("");
   const [cCode, setCCode] = useState("");
 
-  // 🔥 CONTROLE DE SIMULAÇÃO
   const [steps, setSteps] = useState([]);
   const [currentStep, setCurrentStep] = useState(0);
+
   const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
 
@@ -37,6 +41,7 @@ export default function EditorPage() {
 
   const speedOptions = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75];
 
+  // 🔥 MAPS
   const simulators = {
     stack: StackVisualizer,
     queue: QueueVisualizer,
@@ -56,12 +61,8 @@ export default function EditorPage() {
   };
 
   const currentToolbox = toolboxes[structure];
-
   const runEngine = engines[structure];
-
   const SimulatorComponent = simulators[structure];
-
-  console.log(SimulatorComponent);
 
   // 🔥 EXECUÇÃO AUTOMÁTICA
   useEffect(() => {
@@ -88,6 +89,7 @@ export default function EditorPage() {
     return () => clearTimeout(interval);
   }, [isRunning, currentStep, steps, speed]);
 
+  // 🔥 AUTO SCROLL
   useEffect(() => {
     if (!historyRef.current) return;
 
@@ -102,23 +104,39 @@ export default function EditorPage() {
     }
   }, [currentStep]);
 
-  // 🔥 CONTROLES
+  // 🔥 EXECUTAR
   function handleRun() {
-    if (!code) return;
+    if (!code) {
+      showError({ message: "Nenhum código para executar" });
+      return;
+    }
 
-    const stepsResult = runEngine(code);
+    try {
+      const stepsResult = runEngine(code);
 
-    setSteps(stepsResult);
-    setCurrentStep(0);
-    setIsRunning(true);
-    setIsPaused(false);
+      if (!stepsResult || !Array.isArray(stepsResult)) {
+        throw new Error("Resultado inválido");
+      }
+
+      setSteps(stepsResult);
+      setCurrentStep(0);
+      setIsRunning(true);
+      setIsPaused(false);
+
+    } catch (err) {
+      console.error(err);
+
+      showError({
+        message: "Erro ao executar o algoritmo"
+      });
+    }
   }
 
   function handlePause() {
     setIsRunning(false);
     setIsPaused(true);
   }
-  
+
   function handleContinue() {
     setIsRunning(true);
     setIsPaused(false);
@@ -135,6 +153,24 @@ export default function EditorPage() {
     setCurrentStep(0);
     setIsRunning(false);
     setIsPaused(false);
+  }
+
+  // 🔥 SEGURANÇA DO SIMULADOR
+  const safeStep = steps[currentStep] || {};
+  const safeData = safeStep.state || {};
+
+  const hasInvalidState =
+    steps.length > 0 && !steps[currentStep];
+
+  if (hasInvalidState) {
+    return (
+      <div
+        className="flex items-center justify-center h-full"
+        style={{ color: theme.danger }}
+      >
+        ⚠️ Erro na simulação
+      </div>
+    );
   }
 
   return (
@@ -186,7 +222,7 @@ export default function EditorPage() {
               className="px-4 py-2 rounded-lg font-semibold shadow transition"
               style={{ background: theme.primary, color: "#fff" }}
             >
-              ⏭ Passo a passo
+              ⏭ Passo
             </button>
 
             <button
@@ -197,7 +233,7 @@ export default function EditorPage() {
               🧹 Limpar
             </button>
 
-            {/* SLIDER */}
+            {/* SPEED */}
             <div className="flex items-center gap-3 w-64">
 
               <span style={{ color: theme.text }} className="text-sm w-10">
@@ -214,7 +250,7 @@ export default function EditorPage() {
                   const index = Number(e.target.value);
                   setSpeed(speedOptions[index]);
                 }}
-                className="w-full cursor-pointer appearance-none h-2 rounded-lg"
+                className="w-full cursor-pointer"
                 style={{
                   background: theme.border,
                   accentColor: theme.primary
@@ -234,8 +270,8 @@ export default function EditorPage() {
             }}
           >
             <SimulatorComponent
-              data={steps[currentStep]?.state || {}}
-              step={steps[currentStep]}
+              data={safeData}
+              step={safeStep}
             />
           </div>
 
@@ -253,7 +289,7 @@ export default function EditorPage() {
               className="text-sm font-semibold mb-2"
               style={{ color: theme.muted }}
             >
-              Histórico de Execução
+              Histórico
             </h3>
 
             {steps.length === 0 && (
@@ -283,7 +319,7 @@ export default function EditorPage() {
               return (
                 <div
                   key={i}
-                  className="text-sm flex gap-2 items-center px-2 py-1 rounded transition-all"
+                  className="text-sm flex gap-2 items-center px-2 py-1 rounded"
                   style={{
                     background:
                       i === currentStep ? theme.hover : "transparent",

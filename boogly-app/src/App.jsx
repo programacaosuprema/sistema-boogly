@@ -1,44 +1,72 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { Suspense, lazy } from "react";
+
 import { useAuth } from "./autenticator/useAuth";
+import { LoadingPage } from "./components/pages/LoadingPage";
+import { ErrorPage } from "./components/pages/ErrorPage";
 
-import Home from "./components/pages/Home";
-import MainApp from "./components/pages/MainApp";
-import EditorPage from "./components/pages/EditorPage";
+// 🔥 lazy load (performance)
+const Home = lazy(() => import("./components/pages/HomePage"));
+const MainApp = lazy(() => import("./components/pages/MainApp"));
+const EditorPage = lazy(() => import("./components/pages/EditorPage"));
 
-import ChallengePage from "./components/challenge/ChallengePage";
-import ChallengeDetail from "./components/challenge/ChallengeDetail";
+const ChallengePage = lazy(() => import("./components/challenge/ChallengePage"));
+const ChallengeDetail = lazy(() => import("./components/challenge/ChallengeDetail"));
+
+// 🔒 PROTECTED ROUTE
+function ProtectedRoute({ children }) {
+  const { isAuthenticated, loading } = useAuth();
+  const location = useLocation();
+
+  if (loading) {
+    return <LoadingPage />;
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/" state={{ from: location }} replace />;
+  }
+
+  return children;
+}
+
+// 🔥 ERROR FALLBACK
+function RouteErrorFallback() {
+  return <ErrorPage message="Erro ao carregar a página." />;
+}
 
 export default function App() {
-  const { isAuthenticated } = useAuth();
-
   return (
-    <Routes>
+    <Suspense fallback={<LoadingPage />}>
+      <Routes>
 
-      {/* HOME */}
-      <Route path="/" element={<Home />} />
+        {/* HOME */}
+        <Route path="/" element={<Home />} />
 
-      {/* APP (LAYOUT PROTEGIDO) */}
-      <Route
-        path="/app"
-        element={
-          isAuthenticated ? <MainApp /> : <Navigate to="/" />
-        }
-      >
+        {/* APP PROTEGIDO */}
+        <Route
+          path="/app"
+          element={
+            <ProtectedRoute>
+              <MainApp />
+            </ProtectedRoute>
+          }
+        >
 
-        {/* EDITOR */}
-        <Route index element={<EditorPage />} />
+          {/* EDITOR */}
+          <Route index element={<EditorPage />} />
 
-        {/* LISTA DE DESAFIOS */}
-        <Route path="challenges" element={<ChallengePage />} />
+          {/* DESAFIOS */}
+          <Route path="challenges" element={<ChallengePage />} />
 
-        {/* 🔥 DETALHE DO DESAFIO */}
-        <Route path="challenges/:id" element={<ChallengeDetail />} />
+          {/* DETALHE */}
+          <Route path="challenges/:id" element={<ChallengeDetail />} />
 
-      </Route>
+        </Route>
 
-      {/* FALLBACK */}
-      <Route path="*" element={<Navigate to="/" />} />
+        {/* FALLBACK GLOBAL */}
+        <Route path="*" element={<Navigate to="/" replace />} />
 
-    </Routes>
+      </Routes>
+    </Suspense>
   );
 }
