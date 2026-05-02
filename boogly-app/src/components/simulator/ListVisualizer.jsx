@@ -1,37 +1,30 @@
-// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from "framer-motion";
+import { useTheme } from "../../theme/useTheme";
 
-const NODE_COLORS = [
-  "#3B82F6", // blue
-  "#8B5CF6", // violet
-  "#14B8A6", // teal
-  "#0008FD", // strong blue
-  "#F023AF", // pink
-  "#22C55E", // green
-  "#06B6D4", // cyan
-  "#6366F1", // indigo
-  "#0EA5E9", // sky blue
-  "#10B981", // emerald
-  "#7C3AED", // deep violet
-  "#0891B2", // dark cyan
-  "#2563EB", // darker blue
-  "#9333EA", // purple
-  "#059669", // dark green
-];
-
-function getNodeColor(index) {
-  return NODE_COLORS[index % NODE_COLORS.length];
+function getNodeColor(index, theme) {
+  const colors = [
+    theme.primary,
+    theme.success,
+    theme.warning,
+    "#6366F1",
+    "#8B5CF6",
+    "#06B6D4"
+  ];
+  return colors[index % colors.length];
 }
 
 export default function ListVisualizer({ data, step }) {
+  const { theme } = useTheme();
 
   const activeIndex = step?.type === "traverse" ? step.index : null;
-
   const removingIndex = step?.type === "highlight_remove" ? step.index : null;
 
   if (!data || Object.keys(data).length === 0) {
     return (
-      <div className="flex h-full items-center justify-center text-sm text-gray-400">
+      <div
+        className="flex h-full items-center justify-center text-sm"
+        style={{ color: theme.muted }}
+      >
         Nenhuma lista
       </div>
     );
@@ -41,12 +34,20 @@ export default function ListVisualizer({ data, step }) {
     <div className="flex flex-col gap-8">
       {Object.entries(data).map(([name, list]) => (
         <div key={name} className="space-y-3">
-          <h3 className="text-lg font-semibold text-gray-700">
+
+          {/* 🔥 NOME */}
+          <h3
+            className="text-lg font-semibold"
+            style={{ color: theme.text }}
+          >
             {name}
           </h3>
 
           {list.length === 0 ? (
-            <div className="text-sm text-gray-400">
+            <div
+              className="text-sm"
+              style={{ color: theme.muted }}
+            >
               Lista vazia
             </div>
           ) : (
@@ -56,9 +57,6 @@ export default function ListVisualizer({ data, step }) {
                   {list.map((item, index) => {
                     const isFirst = index === 0;
                     const isLast = index === list.length - 1;
-
-                    //const isActive = index === activeIndex;
-                    //const isRemoving = index === removingIndex;
 
                     return (
                       <motion.div
@@ -75,10 +73,17 @@ export default function ListVisualizer({ data, step }) {
                         transition={{ duration: 0.35 }}
                         className="flex items-center gap-4"
                       >
+
                         <div className="flex flex-col items-center">
 
                           {/* POSIÇÃO */}
-                          <div className="mb-2 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-500">
+                          <div
+                            className="mb-2 rounded-full px-3 py-1 text-xs font-medium"
+                            style={{
+                              background: theme.card,
+                              color: theme.muted
+                            }}
+                          >
                             Posição {index}
                           </div>
 
@@ -86,37 +91,50 @@ export default function ListVisualizer({ data, step }) {
 
                             {/* INÍCIO */}
                             {isFirst && (
-                              <div className="mb-2 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+                              <div
+                                className="mb-2 rounded-full px-3 py-1 text-xs font-semibold"
+                                style={{
+                                  background: theme.success,
+                                  color: "#fff"
+                                }}
+                              >
                                 Início
                               </div>
                             )}
 
                             {/* FIM */}
                             {isLast && (
-                              <div className="mb-2 rounded-full bg-rose-100 px-3 py-1 text-xs font-semibold text-rose-700">
+                              <div
+                                className="mb-2 rounded-full px-3 py-1 text-xs font-semibold"
+                                style={{
+                                  background: theme.danger,
+                                  color: "#fff"
+                                }}
+                              >
                                 Fim
                               </div>
                             )}
 
                             {/* 🔥 NODO */}
-                            <div className={`flex h-16 w-16 items-center justify-center rounded-2xl border-2 text-lg font-bold text-white shadow-lg transition-all duration-300 ${
-                                activeIndex === index
-                                  ? "scale-125 ring-4 ring-yellow-400"
-                                  : removingIndex === index
-                                  ? "scale-125 ring-4 ring-red-500 animate-bounce"
-                                  : "border-white"
-                                }`}
-                                style={{
-                                  backgroundColor:
-                                    removingIndex === index
-                                      ? "#DC2626" // 🔴 alvo
-                                      : activeIndex === index
-                                      ? "#FACC15" // 🟡 percurso
-                                      : getNodeColor(index)
-                                }}
-                              >
-                            {item}
-                          </div>
+                            <div
+                              className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 text-lg font-bold text-white shadow-lg transition-all duration-300"
+                              style={{
+                                borderColor: theme.border,
+                                backgroundColor:
+                                  removingIndex === index
+                                    ? theme.danger
+                                    : activeIndex === index
+                                    ? theme.warning
+                                    : getNodeColor(index, theme),
+                                transform:
+                                  activeIndex === index ||
+                                  removingIndex === index
+                                    ? "scale(1.2)"
+                                    : "scale(1)"
+                              }}
+                            >
+                              {item}
+                            </div>
 
                           </div>
                         </div>
@@ -124,16 +142,20 @@ export default function ListVisualizer({ data, step }) {
                         {/* SETA */}
                         {!isLast && (
                           <div className="flex flex-col items-center justify-center">
-                            <div className="text-xs font-medium text-gray-400 mb-2">
+                            <div
+                              className="text-xs font-medium mb-2"
+                              style={{ color: theme.muted }}
+                            >
                               Próximo
                             </div>
+
                             <svg
                               width="42"
                               height="24"
                               viewBox="0 0 42 24"
                               fill="none"
                               xmlns="http://www.w3.org/2000/svg"
-                              className="text-gray-400"
+                              style={{ color: theme.muted }}
                             >
                               <path
                                 d="M2 12H36"

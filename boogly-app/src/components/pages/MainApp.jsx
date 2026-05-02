@@ -1,21 +1,40 @@
 import { Outlet } from "react-router-dom";
 import Header from "../panels/Header";
 import { useAuth } from "../../autenticator/useAuth";
+import { useTheme } from "../../theme/useTheme";
 
 export default function MainApp() {
   const { structure, setStructure } = useAuth();
+  const { theme } = useTheme();
 
   return (
-    <div className="h-dvh flex flex-col bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
+    <div
+      className="h-dvh flex flex-col"
+      style={{
+        background: theme.background,
+        color: theme.text
+      }}
+    >
 
       {/* HEADER */}
-      <header className="h-16 shrink-0 border-b border-white/10">
+      <header
+        className="h-16 shrink-0 border-b"
+        style={{
+          borderColor: theme.border,
+          background: theme.header
+        }}
+      >
         <Header structure={structure} setStructure={setStructure} />
       </header>
 
       {/* CONTEÚDO */}
       <main className="flex-1 min-h-0 overflow-hidden">
-        <div className="h-full p-3">
+        <div
+          className="h-full p-3"
+          style={{
+            background: theme.background
+          }}
+        >
           <Outlet />
         </div>
       </main>

@@ -1,8 +1,10 @@
-import { Star, Trophy } from "lucide-react";
 import { useApp } from "../../app_configuration/useApp";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../autenticator/useAuth";
 import { useLocation } from "react-router-dom";
+import { useTheme } from "../../theme/useTheme";
+import ActionButton from "../../components/ui/ActionButton";
+import { LogOut, Trophy, Target, Star } from "lucide-react";
 
 const STRUCTURE_LABELS = {
   list: "Lista",
@@ -11,72 +13,108 @@ const STRUCTURE_LABELS = {
 };
 
 export default function Header({ structure }) {
+  const { theme, themeName, setThemeName } = useTheme();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const mode = STRUCTURE_LABELS[structure] || "Lista";
-  const {appName} = useApp();
+  const { appName } = useApp();
   const location = useLocation();
 
-  const isChallengePage = location.pathname.startsWith("/app/challenges"); // especic routes to hide on the header
+  const isChallengePage = location.pathname.startsWith("/app/challenges");
 
   function handleLogout() {
     logout();
-    navigate("/"); // volta pra home
+    navigate("/");
   }
 
   return (
-    <div className="w-full h-full flex items-center justify-between px-6">
-
+    <div
+      className="w-full h-full flex items-center justify-between px-6"
+      style={{
+        background: theme.background,
+        color: theme.text
+      }}
+    >
       {/* 🔥 ESQUERDA → LOGO */}
       <div className="flex items-center gap-3">
         <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-blue-500 rounded-md" />
-        <h1 className="text-lg font-semibold text-white">
-          {appName}
+        <h1
+          className="text-lg font-semibold"
+          style={{ color: theme.text }}
+        >
+          {appName.toUpperCase()}
         </h1>
       </div>
 
-      {/* 🔥 DIREITA → CONTROLES */}
+      {/* 🔥 DIREITA */}
       <div className="flex items-center gap-3">
 
-        <button
-          onClick={handleLogout}
-          className="bg-red-500 hover:bg-red-600 px-3 py-1 rounded-lg text-sm"
-        >
-          Sair
-        </button>
-
         {/* PLAYER */}
-        {user ? (
-            <span>👤 {user.nickname}</span>
-          ) : (
-            <span>Não logado</span>
-          )}
+        <span style={{ color: theme.text }}>
+          {user ? `👤 ${user.nickname.toUpperCase()}` : "Não logado"}
+        </span>
+
         {/* MODO */}
-        <div className="px-4 py-2 bg-white/10 rounded-full text-sm text-white">
+        <div
+          className="px-4 py-2 rounded-full text-sm"
+          style={{
+            background: theme.card,
+            color: theme.text
+          }}
+        >
           modo: <span className="font-semibold">{mode}</span>
+        </div>
+
+        {/* PONTOS */}
+        <div
+          className="flex items-center gap-2 px-4 py-2 rounded-full text-sm"
+          style={{
+            background: theme.card,
+            color: theme.text
+          }}
+        >
+          <Star className="w-4 h-4" style={{ color: theme.warning }} />
+          {user?.points ?? 0} pontos
         </div>
 
         {/* DESAFIOS */}
         {!isChallengePage && (
-          <button
+          <ActionButton
             onClick={() => navigate("/app/challenges", { state: { structure } })}
-            className="px-4 py-2 bg-white/10 rounded-full text-sm text-white hover:bg-white/20 transition"
+            icon={Target}
           >
             desafios {mode.toLowerCase()}
-          </button>
+          </ActionButton>
         )}
 
-        {/* PONTOS */}
-        <div className="flex items-center gap-2 px-4 py-2 bg-white/10 rounded-full text-sm text-white">
-          <Star className="w-4 h-4 text-yellow-400" />
-          {user?.points ?? 0} pontos
-        </div>
-
         {/* RANKING */}
-        <button className="flex items-center gap-2 px-4 py-2 bg-white/10 rounded-full text-sm text-white hover:bg-white/20 transition">
-          <Trophy className="w-4 h-4 text-yellow-300" />
+        <ActionButton icon={Trophy}>
           ranking
-        </button>
+        </ActionButton>
+
+        {/* THEME SELECT */}
+        <select
+          value={themeName}
+          onChange={(e) => setThemeName(e.target.value)}
+          className="text-sm px-3 py-1 rounded-lg"
+          style={{
+            background: theme.toolbox,
+            color: theme.text
+          }}
+        >
+          <option value="light">🌞 Claro</option>
+          <option value="dark">🌙 Escuro</option>
+          <option value="colorful">🎨 Colorido</option>
+        </select>
+
+        {/* LOGOUT */}
+        <ActionButton
+          onClick={handleLogout}
+          icon={LogOut}
+          variant="danger"
+        >
+          Sair
+        </ActionButton>
 
       </div>
     </div>

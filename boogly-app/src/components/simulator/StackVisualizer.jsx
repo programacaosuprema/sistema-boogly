@@ -1,22 +1,28 @@
 import { motion, AnimatePresence } from "framer-motion";
+import { useTheme } from "../../theme/useTheme";
 
-const NODE_COLORS = [
-  "#3B82F6",
-  "#8B5CF6",
-  "#14B8A6",
-  "#F59E0B",
-  "#EF4444",
-  "#22C55E",
-];
+function getNodeColor(index, theme) {
+  const palette = [
+    theme.primary,
+    theme.success,
+    theme.warning,
+    theme.danger,
+    theme.blocks?.structure,
+    theme.blocks?.logic
+  ].filter(Boolean);
 
-function getNodeColor(index) {
-  return NODE_COLORS[index % NODE_COLORS.length];
+  return palette[index % palette.length];
 }
 
 export default function StackVisualizer({ data }) {
+  const { theme } = useTheme();
+
   if (!data || Object.keys(data).length === 0) {
     return (
-      <div className="flex h-full items-center justify-center text-sm text-gray-400">
+      <div
+        className="flex h-full items-center justify-center text-sm"
+        style={{ color: theme.muted }}
+      >
         Nenhuma pilha
       </div>
     );
@@ -27,10 +33,22 @@ export default function StackVisualizer({ data }) {
       {Object.entries(data).map(([name, stack]) => (
         <div key={name} className="space-y-3 flex flex-col items-center">
 
-          <h3 className="text-lg font-semibold text-gray-700">{name}</h3>
+          {/* 🔤 NOME */}
+          <h3
+            className="text-lg font-semibold"
+            style={{ color: theme.text }}
+          >
+            {name}
+          </h3>
 
+          {/* 🚫 PILHA VAZIA */}
           {stack.length === 0 ? (
-            <div className="text-sm text-gray-400">Pilha vazia</div>
+            <div
+              className="text-sm"
+              style={{ color: theme.muted }}
+            >
+              Pilha vazia
+            </div>
           ) : (
 
             <div className="flex flex-col-reverse items-center gap-4">
@@ -50,26 +68,44 @@ export default function StackVisualizer({ data }) {
                       className="flex items-center gap-3"
                     >
 
-                      {/* LABEL LADO */}
-                      <div className="text-xs text-gray-400 w-16 text-right">
+                      {/* 📍 POSIÇÃO */}
+                      <div
+                        className="text-xs w-16 text-right"
+                        style={{ color: theme.muted }}
+                      >
                         Posição {index}
                       </div>
 
-                      {/* NODE */}
+                      {/* 🧱 BLOCO */}
                       <div className="flex flex-col items-center">
 
+                        {/* 🔝 TOPO */}
                         {isTop && (
-                          <div className="mb-2 rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-700">
+                          <motion.div
+                            initial={{ scale: 0.8 }}
+                            animate={{ scale: 1 }}
+                            className="mb-2 px-3 py-1 text-xs font-semibold rounded-full"
+                            style={{
+                              background: `${theme.primary}20`,
+                              color: theme.primary,
+                              border: `1px solid ${theme.primary}`
+                            }}
+                          >
                             Topo
-                          </div>
+                          </motion.div>
                         )}
 
-                        <div
-                          className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-white text-lg font-bold text-white shadow-lg"
-                          style={{ backgroundColor: getNodeColor(index) }}
+                        <motion.div
+                          whileHover={{ scale: 1.1 }}
+                          className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 text-lg font-bold shadow-lg"
+                          style={{
+                            background: getNodeColor(index, theme),
+                            color: "#fff",
+                            borderColor: theme.background
+                          }}
                         >
                           {item}
-                        </div>
+                        </motion.div>
 
                       </div>
 

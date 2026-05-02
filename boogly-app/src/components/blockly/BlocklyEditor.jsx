@@ -14,17 +14,16 @@ import "../../blockly/generators/queueGenerator";
 import { javascriptGenerator } from "blockly/javascript";
 import { cGenerator } from "../../blockly/generators/cGenerator";
 
-export default function BlocklyEditor({
-  toolbox,
-  setCode,
-  setCCode,
-}) {
+import { useTheme } from "../../theme/useTheme";
+
+export default function BlocklyEditor({ toolbox, setCode, setCCode }) {
   const blocklyDiv = useRef(null);
   const workspaceRef = useRef(null);
   const debounceRef = useRef(null);
 
-  // 🔥 categoria ativa
   const [category, setCategory] = useState("list");
+
+  const { theme } = useTheme();
 
   const isListToolbox = toolbox?.list;
 
@@ -33,7 +32,12 @@ export default function BlocklyEditor({
     workspaceRef.current = Blockly.inject(blocklyDiv.current, {
       toolbox: toolbox?.list || toolbox,
       trashcan: true,
-      grid: { spacing: 20, length: 3, colour: "#eac", snap: true },
+      grid: {
+        spacing: 20,
+        length: 3,
+        colour: theme.border,
+        snap: true
+      },
       zoom: {
         controls: true,
         wheel: true,
@@ -53,137 +57,116 @@ export default function BlocklyEditor({
 
         const codeC = cGenerator(workspaceRef.current);
         setCCode(codeC);
-
       }, 200);
     });
 
     return () => {
       workspaceRef.current?.dispose();
     };
-  }, [setCCode, setCode, toolbox]);
+  }, [setCCode, setCode, theme.border, toolbox]);
 
-  // 🔥 ATUALIZA TOOLBOX AO TROCAR CATEGORIA
+  // 🔥 ATUALIZA TOOLBOX
   useEffect(() => {
-    if (workspaceRef.current) {
-      if (toolbox?.list) {
-        workspaceRef.current.updateToolbox(toolbox[category]);
-      }
+    if (workspaceRef.current && toolbox?.list) {
+      workspaceRef.current.updateToolbox(toolbox[category]);
     }
-  }, [category, toolbox]); 
+  }, [category, toolbox]);
+
+  // 🔥 THEME BLOCKLY
+  useEffect(() => {
+    if (!workspaceRef.current) return;
+
+    const customTheme = Blockly.Theme.defineTheme("custom-theme", {
+      base: Blockly.Themes.Classic,
+
+      blockStyles: {
+        list_blocks: {
+          colourPrimary: theme.blocks.list
+        },
+        stack_blocks: {
+          colourPrimary: theme.blocks.stack
+        },
+        queue_blocks: {
+          colourPrimary: theme.blocks.queue
+        },
+        logic_blocks: {
+          colourPrimary: theme.blocks.logic
+        }
+      },
+
+      componentStyles: {
+        workspaceBackgroundColour: theme.workspace,
+        toolboxBackgroundColour: theme.toolbox,
+        toolboxForegroundColour: theme.text,
+        flyoutBackgroundColour: theme.toolbox,
+        flyoutForegroundColour: theme.text,
+
+        scrollbarColour: theme.border,
+        insertionMarkerColour: theme.primary,
+        insertionMarkerOpacity: 0.3,
+
+        cursorColour: theme.primary
+      }
+    });
+
+    workspaceRef.current.setTheme(customTheme);
+
+  }, [theme]);
 
   return (
-    
-    <div className="flex h-full w-full bg-white rounded-xl overflow-visible">
+    <div
+      className="flex h-full w-full rounded-xl"
+      style={{ background: theme.workspace }}
+    >
+
+      {/* 🔥 SIDEBAR */}
       {isListToolbox && (
-        <div className="w-14 bg-gray-50 border-r flex flex-col items-center gap-4 py-3 relative overflow-visible">
+        <div
+          className="w-14 border-r flex flex-col items-center gap-4 py-3"
+          style={{ background: theme.toolbox, borderColor: theme.border }}
+        >
 
-          {/* LISTA */}
-          <div className="group relative">
-            <button
-              onClick={() => setCategory("list")}
-              className={`w-10 h-10 rounded-full transition ${
-                category === "list"
-                  ? "bg-blue-600 scale-110"
-                  : "bg-blue-400 hover:bg-blue-500"
-              }`}
-            />
-            <span className="absolute left-12 top-1/2 -translate-y-1/2 
-            bg-black text-white text-xs px-2 py-1 rounded 
-            opacity-0 group-hover:opacity-100 transition 
-            whitespace-nowrap z-50 pointer-events-none">
-            Lista
-          </span>
-          </div>
+          <CategoryButton
+            label="Lista"
+            active={category === "list"}
+            onClick={() => setCategory("list")}
+            theme={theme}
+          />
 
-          {/* VARIÁVEIS */}
-          <div className="group relative">
-            <button
-              onClick={() => setCategory("variables")}
-              className={`w-10 h-10 rounded-full transition ${
-                category === "variables"
-                  ? "bg-yellow-500 scale-110"
-                  : "bg-yellow-400 hover:bg-yellow-500"
-              }`}
-            />
-          <span className="absolute left-12 top-1/2 -translate-y-1/2 
-            bg-black text-white text-xs px-2 py-1 rounded 
-            opacity-0 group-hover:opacity-100 transition 
-            whitespace-nowrap z-50 pointer-events-none">
-            Váriaveis
-          </span>
-          </div>
+          <CategoryButton
+            label="Variáveis"
+            active={category === "variables"}
+            onClick={() => setCategory("variables")}
+            theme={theme}
+          />
 
-          {/* CONDIÇÕES */}
-          <div className="group relative">
-            <button
-              onClick={() => setCategory("conditions")}
-              className={`w-10 h-10 rounded-full transition ${
-                category === "conditions"
-                  ? "bg-green-600 scale-110"
-                  : "bg-green-500 hover:bg-green-600"
-              }`}
-            />
-            <span className="absolute left-12 top-1/2 -translate-y-1/2 
-            bg-black text-white text-xs px-2 py-1 rounded 
-            opacity-0 group-hover:opacity-100 transition 
-            whitespace-nowrap z-50 pointer-events-none">
-            Condições
-          </span>
-          </div>
+          <CategoryButton
+            label="Condições"
+            active={category === "conditions"}
+            onClick={() => setCategory("conditions")}
+            theme={theme}
+          />
 
-          {/* LAÇOS */}
-          <div className="group relative">
-            <button
-              onClick={() => setCategory("loops")}
-              className={`w-10 h-10 rounded-full transition ${
-                category === "loops"
-                  ? "bg-purple-600 scale-110"
-                  : "bg-purple-500 hover:bg-purple-600"
-              }`}
-            />
-            <span className="absolute left-12 top-1/2 -translate-y-1/2 
-            bg-black text-white text-xs px-2 py-1 rounded 
-            opacity-0 group-hover:opacity-100 transition 
-            whitespace-nowrap z-50 pointer-events-none">
-            Laços
-          </span>
-          </div>
+          <CategoryButton
+            label="Laços"
+            active={category === "loops"}
+            onClick={() => setCategory("loops")}
+            theme={theme}
+          />
 
-          {/* ESTADO */}
-          <div className="group relative">
-            <button
-              onClick={() => setCategory("state")}
-              className={`w-10 h-10 rounded-full transition ${
-                category === "state"
-                  ? "bg-teal-600 scale-110"
-                  : "bg-teal-500 hover:bg-teal-600"
-              }`}
-            />
-            <span className="absolute left-12 top-1/2 -translate-y-1/2 
-            bg-black text-white text-xs px-2 py-1 rounded 
-            opacity-0 group-hover:opacity-100 transition 
-            whitespace-nowrap z-50 pointer-events-none">
-            Estado
-          </span>
-          </div>
+          <CategoryButton
+            label="Estado"
+            active={category === "state"}
+            onClick={() => setCategory("state")}
+            theme={theme}
+          />
 
-          {/* ORDENAÇÃO */}
-          <div className="group relative">
-            <button
-              onClick={() => setCategory("sort")}
-              className={`w-10 h-10 rounded-full transition ${
-                category === "sort"
-                  ? "bg-indigo-600 scale-110"
-                  : "bg-indigo-500 hover:bg-indigo-600"
-              }`}
-            />
-            <span className="absolute left-12 top-1/2 -translate-y-1/2 
-            bg-black text-white text-xs px-2 py-1 rounded 
-            opacity-0 group-hover:opacity-100 transition 
-            whitespace-nowrap z-50 pointer-events-none">
-            Ordenação
-          </span>
-          </div>
+          <CategoryButton
+            label="Ordenação"
+            active={category === "sort"}
+            onClick={() => setCategory("sort")}
+            theme={theme}
+          />
 
         </div>
       )}
@@ -192,23 +175,66 @@ export default function BlocklyEditor({
       <div className="flex-1 flex flex-col">
 
         {/* HEADER */}
-        <div className="bg-cyan-100 px-4 py-3 flex justify-between items-center border-b">
+        <div
+          className="px-4 py-3 flex justify-between items-center border-b"
+          style={{
+            background: theme.header,
+            borderColor: theme.border,
+            color: theme.text
+          }}
+        >
           <div className="flex items-center gap-3">
-            <div className="bg-blue-600 text-white px-4 py-2 rounded-full font-semibold">
+            <div
+              className="px-4 py-2 rounded-full font-semibold"
+              style={{
+                background: theme.primary,
+                color: "#fff"
+              }}
+            >
               Área de Programação
             </div>
-            <span className="text-sm font-semibold text-gray-700">
+
+            <span style={{ color: theme.muted }}>
               arraste e conecte os blocos
             </span>
           </div>
         </div>
 
-        {/* Blockly */}
+        {/* BLOCKLY */}
         <div className="flex-1">
           <div ref={blocklyDiv} className="h-full w-full" />
         </div>
 
       </div>
+    </div>
+  );
+}
+
+function CategoryButton({ label, active, onClick, theme }) {
+  return (
+    <div className="group relative">
+      <button
+        onClick={onClick}
+        className="w-10 h-10 rounded-full transition"
+        style={{
+          background: active ? theme.primary : theme.hover,
+          transform: active ? "scale(1.1)" : "scale(1)"
+        }}
+      />
+
+      {/* TOOLTIP */}
+      <span
+        className="absolute left-12 top-1/2 -translate-y-1/2 
+        text-xs px-2 py-1 rounded whitespace-nowrap 
+        opacity-0 group-hover:opacity-100 transition pointer-events-none z-50"
+        style={{
+          background: theme.panel,
+          color: theme.text,
+          border: `1px solid ${theme.border}`
+        }}
+      >
+        {label}
+      </span>
     </div>
   );
 }

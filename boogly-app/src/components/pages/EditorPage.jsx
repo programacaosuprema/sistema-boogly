@@ -13,12 +13,14 @@ import { runStack } from "../simulator/engines/stackEngine";
 import { runQueue } from "../simulator/engines/queueEngine";
 import { runList } from "../simulator/engines/listEngine";
 
+import { useTheme } from "../../theme/useTheme";
+
 
 import { stackToolbox, queueToolbox, toolboxCategories } from "../../blockly/toolboxes";
 
 
 export default function EditorPage() {
-
+  const { theme } = useTheme();
   const historyRef = useRef(null);
 
   const { structure } = useAuth();
@@ -136,13 +138,19 @@ export default function EditorPage() {
   }
 
   return (
-    <div className="flex flex-col h-full gap-3">
+    <div
+      className="flex flex-col h-full gap-3"
+      style={{ background: theme.background }}
+    >
 
       {/* MAIN */}
       <div className="flex flex-1 min-h-0 gap-3">
 
         {/* BLOCKLY */}
-        <section className="flex-1 bg-white/5 rounded-xl overflow-hidden">
+        <section
+          className="flex-1 rounded-xl overflow-hidden"
+          style={{ background: theme.workspace }}
+        >
           <BlocklyEditor
             toolbox={currentToolbox}
             setCode={setCode}
@@ -151,7 +159,10 @@ export default function EditorPage() {
         </section>
 
         {/* SIMULAÇÃO */}
-        <section className="flex-1 min-h-0 bg-[#1E1E2E] rounded-xl p-4 flex flex-col gap-4 overflow-hidden">
+        <section
+          className="flex-1 min-h-0 rounded-xl p-4 flex flex-col gap-4 overflow-hidden"
+          style={{ background: theme.panel }}
+        >
 
           {/* CONTROLES */}
           <div className="flex items-center gap-3 flex-wrap">
@@ -162,7 +173,8 @@ export default function EditorPage() {
                 if (isRunning) return handlePause();
                 if (isPaused) return handleContinue();
               }}
-              className="bg-green-500 hover:bg-green-600 px-4 py-2 rounded-lg font-semibold shadow"
+              className="px-4 py-2 rounded-lg font-semibold shadow transition"
+              style={{ background: theme.success, color: "#fff" }}
             >
               {!isRunning && !isPaused && "▶ Executar"}
               {isRunning && "⏸ Pausar"}
@@ -171,21 +183,24 @@ export default function EditorPage() {
 
             <button
               onClick={handleNextStep}
-              className="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg font-semibold shadow"
+              className="px-4 py-2 rounded-lg font-semibold shadow transition"
+              style={{ background: theme.primary, color: "#fff" }}
             >
               ⏭ Passo a passo
             </button>
 
             <button
               onClick={handleClear}
-              className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg font-semibold shadow"
+              className="px-4 py-2 rounded-lg font-semibold shadow transition"
+              style={{ background: theme.danger, color: "#fff" }}
             >
               🧹 Limpar
             </button>
 
+            {/* SLIDER */}
             <div className="flex items-center gap-3 w-64">
 
-              <span className="text-white text-sm w-10">
+              <span style={{ color: theme.text }} className="text-sm w-10">
                 {speed}x
               </span>
 
@@ -199,7 +214,11 @@ export default function EditorPage() {
                   const index = Number(e.target.value);
                   setSpeed(speedOptions[index]);
                 }}
-                className="w-full cursor-pointer appearance-none h-2 rounded-lg bg-gray-700 accent-blue-500"
+                className="w-full cursor-pointer appearance-none h-2 rounded-lg"
+                style={{
+                  background: theme.border,
+                  accentColor: theme.primary
+                }}
               />
 
             </div>
@@ -207,7 +226,13 @@ export default function EditorPage() {
           </div>
 
           {/* VISUALIZAÇÃO */}
-          <div className="flex-1 min-h-0 bg-[#2A2A40] rounded-xl p-4 overflow-auto border border-white/10">
+          <div
+            className="flex-1 min-h-0 rounded-xl p-4 overflow-auto border"
+            style={{
+              background: theme.card,
+              borderColor: theme.border
+            }}
+          >
             <SimulatorComponent
               data={steps[currentStep]?.state || {}}
               step={steps[currentStep]}
@@ -217,15 +242,22 @@ export default function EditorPage() {
           {/* HISTÓRICO */}
           <div
             ref={historyRef}
-            className="bg-[#151521] rounded-xl p-4 h-40 overflow-auto border border-white/10"
-        >
+            className="rounded-xl p-4 h-40 overflow-auto border"
+            style={{
+              background: theme.toolbox,
+              borderColor: theme.border
+            }}
+          >
 
-            <h3 className="text-sm font-semibold mb-2 text-white/70">
+            <h3
+              className="text-sm font-semibold mb-2"
+              style={{ color: theme.muted }}
+            >
               Histórico de Execução
             </h3>
 
             {steps.length === 0 && (
-              <p className="text-white/40 text-sm">
+              <p style={{ color: theme.muted }} className="text-sm">
                 Nenhuma execução ainda
               </p>
             )}
@@ -234,12 +266,12 @@ export default function EditorPage() {
 
               const color =
                 step.type === "add"
-                  ? "text-green-400"
+                  ? theme.success
                   : step.type === "remove"
-                  ? "text-red-400"
+                  ? theme.danger
                   : step.type === "create"
-                  ? "text-blue-400"
-                  : "text-white";
+                  ? theme.primary
+                  : theme.text;
 
               const symbol =
                 step.type === "add"
@@ -251,18 +283,23 @@ export default function EditorPage() {
               return (
                 <div
                   key={i}
-                  className={`text-sm flex gap-2 items-center px-2 py-1 rounded transition-all
-                    ${i === currentStep
-                      ? "bg-white/20 border-l-4 border-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.7)] "
-                      : "opacity-60"}
-                  `}
+                  className="text-sm flex gap-2 items-center px-2 py-1 rounded transition-all"
+                  style={{
+                    background:
+                      i === currentStep ? theme.hover : "transparent",
+                    borderLeft:
+                      i === currentStep
+                        ? `4px solid ${theme.primary}`
+                        : "none",
+                    opacity: i === currentStep ? 1 : 0.6
+                  }}
                 >
 
-                  <span className={`${color} font-bold`}>
+                  <span style={{ color }} className="font-bold">
                     {symbol}
                   </span>
 
-                  <span>
+                  <span style={{ color: theme.text }}>
                     {step.message} →{" "}
                     {JSON.stringify(Object.values(step.state)[0] || [])}
                   </span>
@@ -278,7 +315,10 @@ export default function EditorPage() {
       </div>
 
       {/* CÓDIGO */}
-      <footer className="h-56 bg-black/80 p-3 overflow-hidden">
+      <footer
+        className="h-56 p-3 overflow-hidden"
+        style={{ background: theme.panel }}
+      >
         <CodePanel cCode={cCode} />
       </footer>
 

@@ -1,10 +1,10 @@
 import { useContext, useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
+
 import { ChallengeIntro } from "./ChanllengeIntro";
 import { LoadingPage } from "../pages/LoadingPage";
 import { AppContext } from "../../app_configuration/AppContext";
-
-import { useNavigate } from "react-router-dom";
+import { useTheme } from "../../theme/useTheme";
 
 export default function ChallengeDetail() {
   const { id } = useParams();
@@ -15,6 +15,7 @@ export default function ChallengeDetail() {
   const [starting, setStarting] = useState(false);
 
   const { domainUrl } = useContext(AppContext);
+  const { theme } = useTheme();
 
   const navigate = useNavigate();
 
@@ -43,23 +44,46 @@ export default function ChallengeDetail() {
 
   if (!challenge) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-red-400">
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ color: theme.danger }}
+      >
         Desafio não encontrado
       </div>
     );
   }
 
   return (
-    <div className="p-6 text-white">
+    <div
+      className="p-6 min-h-screen"
+      style={{
+        background: theme.background,
+        color: theme.text
+      }}
+    >
 
+      {/* 🔙 BOTÃO VOLTAR */}
       <button
         onClick={() => navigate(-1)}
-        className="flex items-center gap-2 bg-white/10 hover:bg-white/20 px-3 py-2 rounded-lg transition text-sm"
+        className="flex items-center gap-2 px-3 py-2 rounded-lg transition text-sm"
+        style={{
+          background: theme.card,
+          color: theme.text,
+          border: `1px solid ${theme.border}`
+        }}
+        onMouseEnter={(e) =>
+          (e.currentTarget.style.background = theme.hover)
+        }
+        onMouseLeave={(e) =>
+          (e.currentTarget.style.background = theme.card)
+        }
       >
         ← Voltar
       </button>
+
+      {/* 🔥 CONTEÚDO */}
       {!started ? (
-        
+
         <ChallengeIntro
           challenge={challenge}
           onStart={() => {
@@ -68,13 +92,24 @@ export default function ChallengeDetail() {
             setTimeout(() => {
               setStarting(false);
               setStarted(true);
-            }, 1500); // ⬅️ reduzi (10s estava exagerado)
+            }, 1500);
           }}
         />
+
       ) : (
-        <div>
-          <p>Workspace do desafio (próximo passo)</p>
+
+        <div
+          className="mt-6 p-6 rounded-xl"
+          style={{
+            background: theme.panel,
+            border: `1px solid ${theme.border}`
+          }}
+        >
+          <p style={{ color: theme.muted }}>
+            Workspace do desafio (próximo passo)
+          </p>
         </div>
+
       )}
     </div>
   );

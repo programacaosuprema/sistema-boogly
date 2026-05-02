@@ -1,10 +1,16 @@
 import { useState, useRef, useEffect } from "react";
 import Editor from "@monaco-editor/react";
+import { useTheme } from "../../theme/useTheme";
+import ActionButton from "../ui/ActionButton";
+import { Download, Clipboard } from "lucide-react";
 
 export default function CodePanel({ cCode }) {
   const [height, setHeight] = useState(220);
   const [isDragging, setIsDragging] = useState(false);
   const [language, setLanguage] = useState("c");
+  const [copied, setCopied] = useState(false);
+
+  const { theme } = useTheme();
 
   const startY = useRef(0);
   const startHeight = useRef(0);
@@ -39,8 +45,6 @@ export default function CodePanel({ cCode }) {
     link.download = "codigo.c";
 
     link.click();
-
-    // 🔥 boa prática (liberar memória)
     URL.revokeObjectURL(link.href);
   };
 
@@ -49,8 +53,6 @@ export default function CodePanel({ cCode }) {
     setIsDragging(false);
   };
 
-  const [copied, setCopied] = useState(false); 
-
   useEffect(() => {
     setCopied(false);
   }, [cCode]);
@@ -58,57 +60,75 @@ export default function CodePanel({ cCode }) {
   return (
     <div
       style={{ height }}
-      className="bg-black/90 border-t border-white/10 flex flex-col"
+      className="flex flex-col border-t"
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
+      // 🔥 AQUI SÓ COR
+      style={{
+        height,
+        background: theme.panel,
+        borderColor: theme.border
+      }}
     >
       {/* 🔥 DRAG HANDLE */}
       <div
         onMouseDown={handleMouseDown}
-        className="h-2 cursor-row-resize bg-white/10 hover:bg-white/20"
+        className="h-2 cursor-row-resize"
+        style={{ background: theme.border }}
       />
 
       {/* 🔥 HEADER */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-white/10">
-
+      <div
+        className="flex items-center justify-between px-4 py-2 border-b"
+        style={{ borderColor: theme.border }}
+      >
         {/* ESQUERDA */}
         <div className="flex items-center gap-4">
-          <h3 className="text-sm font-semibold text-white">
+          <h3
+            className="text-sm font-semibold"
+            style={{ color: theme.text }}
+          >
             Código Gerado
           </h3>
 
           <select
             value={language}
             onChange={(e) => setLanguage(e.target.value)}
-            className="bg-[#1E1E2E] text-white text-sm px-2 py-1 rounded"
+            className="text-sm px-2 py-1 rounded"
+            style={{
+              background: theme.toolbox,
+              color: theme.text
+            }}
           >
             <option value="c">C</option>
           </select>
         </div>
+            <div className="flex items-center gap-2">
+                <ActionButton
+                  onClick={handleDownload}
+                  icon={Download}
+                  variant="success"
+                >
+                  Baixar .c
+                </ActionButton>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleDownload}
-            className="bg-green-500 hover:bg-green-600 px-3 py-1 rounded text-sm"
-          >
-            ⬇ Baixar .c
-          </button>
-
-          <button
-            onClick={handleCopy}
-            className="bg-blue-500 hover:bg-blue-600 px-3 py-1 rounded text-sm"
-          >
-            {copied ? "✅ Copiado!" : "📋 Copiar código"}
-          </button>
+                <ActionButton
+                  onClick={handleCopy}
+                  icon={Clipboard}
+                  variant="primary"
+                >
+                  {copied ? "Copiado!" : "Copiar código"}
+                </ActionButton>
+              </div>
         </div>
-      </div>
+      
 
       {/* 🔥 MONACO */}
       <div className="flex-1">
         <Editor
           height="100%"
           language={language}
-          theme="vs-dark"
+          theme={theme.editor} // 🔥 DINÂMICO
           value={cCode}
           options={{
             readOnly: true,

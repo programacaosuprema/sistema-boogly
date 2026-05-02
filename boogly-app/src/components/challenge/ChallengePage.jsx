@@ -2,12 +2,14 @@ import { useEffect, useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppContext } from "../../app_configuration/AppContext";
 import { LoadingPage } from "../pages/LoadingPage";
+import { useTheme } from "../../theme/useTheme";
 
 export default function ChallengePage() {
   const [challenges, setChallenges] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const { domainUrl } = useContext(AppContext);
+  const { theme } = useTheme();
 
   const navigate = useNavigate();
 
@@ -25,46 +27,84 @@ export default function ChallengePage() {
       .catch(() => setLoading(false));
   }, [domainUrl]);
 
+  // 🔥 STATUS
   function getStatusUI(status) {
     switch (status) {
       case "completed":
         return (
-          <span className="px-2 py-1 rounded-full bg-green-500/20 text-green-300 text-xs font-semibold">
+          <span
+            className="px-2 py-1 rounded-full text-xs font-semibold"
+            style={{
+              background: `${theme.success}20`,
+              color: theme.success
+            }}
+          >
             🟢 Concluído
           </span>
         );
       case "attempted":
         return (
-          <span className="px-2 py-1 rounded-full bg-yellow-500/20 text-yellow-300 text-xs font-semibold">
+          <span
+            className="px-2 py-1 rounded-full text-xs font-semibold"
+            style={{
+              background: `${theme.warning}20`,
+              color: theme.warning
+            }}
+          >
             🟡 Tentando
           </span>
         );
       default:
         return (
-          <span className="px-2 py-1 rounded-full bg-red-500/20 text-red-300 text-xs font-semibold">
+          <span
+            className="px-2 py-1 rounded-full text-xs font-semibold"
+            style={{
+              background: `${theme.danger}20`,
+              color: theme.danger
+            }}
+          >
             🔴 Pendente
           </span>
         );
     }
   }
 
+  // 🔥 DIFICULDADE
   function getDifficultyUI(difficulty) {
     switch (difficulty) {
       case "easy":
         return (
-          <span className="px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-semibold">
+          <span
+            className="px-2 py-1 rounded-full text-xs font-semibold"
+            style={{
+              background: `${theme.success}20`,
+              color: theme.success
+            }}
+          >
             Fácil
           </span>
         );
       case "medium":
         return (
-          <span className="px-2 py-1 rounded-full bg-orange-500/20 text-orange-300 text-xs font-semibold">
+          <span
+            className="px-2 py-1 rounded-full text-xs font-semibold"
+            style={{
+              background: `${theme.warning}20`,
+              color: theme.warning
+            }}
+          >
             Médio
           </span>
         );
       default:
         return (
-          <span className="px-2 py-1 rounded-full bg-red-500/20 text-red-300 text-xs font-semibold">
+          <span
+            className="px-2 py-1 rounded-full text-xs font-semibold"
+            style={{
+              background: `${theme.danger}20`,
+              color: theme.danger
+            }}
+          >
             Difícil
           </span>
         );
@@ -72,48 +112,69 @@ export default function ChallengePage() {
   }
 
   if (loading) {
-    return (
-      <LoadingPage />
-    )
+    return <LoadingPage />;
   }
 
   if (challenges.length === 0) {
     return (
-      <div className="h-full flex items-center justify-center text-white/60">
+      <div
+        className="h-full flex items-center justify-center"
+        style={{ color: theme.muted }}
+      >
         Nenhum desafio encontrado
       </div>
     );
   }
 
   return (
-    <div className="h-full p-4 text-white flex flex-col">
-
+    <div
+      className="h-full p-4 flex flex-col"
+      style={{
+        background: theme.background,
+        color: theme.text
+      }}
+    >
       {/* HEADER */}
       <div className="mb-6">
 
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center gap-2 bg-white/10 hover:bg-white/20 px-3 py-2 rounded-lg transition text-sm"
+          className="flex items-center gap-2 px-3 py-2 rounded-lg transition text-sm"
+          style={{
+            background: theme.card,
+            color: theme.text
+          }}
+          onMouseEnter={(e) => e.target.style.background = theme.hover}
+          onMouseLeave={(e) => e.target.style.background = theme.card}
         >
           ← Voltar
         </button>
 
-        <h2 className="text-2xl font-bold text-white">
+        <h2 className="text-2xl font-bold" style={{ color: theme.text }}>
           Desafios
         </h2>
-        <p className="text-sm text-white/60">
+
+        <p className="text-sm" style={{ color: theme.muted }}>
           Resolva problemas e evolua suas habilidades
         </p>
       </div>
 
       {/* TABELA */}
-      <div className="flex-1 overflow-hidden bg-white/5 rounded-xl">
-
+      <div
+        className="flex-1 overflow-hidden rounded-xl"
+        style={{ background: theme.panel }}
+      >
         <div className="h-full overflow-x-auto">
           <div className="min-w-[900px]">
 
             {/* HEADER TABELA */}
-            <div className="grid grid-cols-6 px-6 py-3 text-sm text-white/60 border-b border-white/10">
+            <div
+              className="grid grid-cols-6 px-6 py-3 text-sm border-b"
+              style={{
+                color: theme.muted,
+                borderColor: theme.border
+              }}
+            >
               <span>Status</span>
               <span>#</span>
               <span>Nome</span>
@@ -134,13 +195,31 @@ export default function ChallengePage() {
                     navigate(`/app/challenges/${c.publicId}`);
                   }
                 }}
-                className="grid grid-cols-6 px-6 py-3 border-b border-white/5 hover:bg-white/10 cursor-pointer transition"
+                className="grid grid-cols-6 px-6 py-3 border-b cursor-pointer transition"
+                style={{
+                  borderColor: theme.border
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.background = theme.hover)
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.background = "transparent")
+                }
               >
                 <span>{getStatusUI(c.userStatus)}</span>
-                <span className="text-white/70">{index + 1}</span>
-                <span className="font-medium">{c.title}</span>
+
+                <span style={{ color: theme.muted }}>
+                  {index + 1}
+                </span>
+
+                <span className="font-medium">
+                  {c.title}
+                </span>
+
                 <span>{getDifficultyUI(c.difficulty)}</span>
+
                 <span>{c.solvedCount.toLocaleString()}</span>
+
                 <span>{c.attempts}</span>
               </div>
             ))}
