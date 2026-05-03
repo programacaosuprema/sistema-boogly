@@ -8,6 +8,7 @@ import { AuthProvider } from "./autenticator/AuthProvider";
 import { AppProvider } from "./app_configuration/AppProvider";
 import { ThemeProvider } from "./theme/ThemeProvider.jsx";
 import { ErrorProvider } from "./error/ErrorProvider.jsx";
+import ErrorBoundaryWrapper from "./error/ErrorBoundaryWrapper";
 
 createRoot(document.getElementById("root")).render(
   <BrowserRouter>
@@ -15,7 +16,9 @@ createRoot(document.getElementById("root")).render(
       <ErrorProvider>
         <AppProvider>
           <AuthProvider>
-            <App />
+            <ErrorBoundaryWrapper>
+              <App />
+            </ErrorBoundaryWrapper>
           </AuthProvider>
         </AppProvider>
       </ErrorProvider>

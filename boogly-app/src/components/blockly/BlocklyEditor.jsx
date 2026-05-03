@@ -7,16 +7,25 @@ import "../../blockly/blocks/stackBlocks";
 import "../../blockly/blocks/queueBlocks";
 import "../../blockly/blocks/listBlocks";
 
-import "../../blockly/generators/stackGenerator";
-import "../../blockly/generators/listGenerator";
-import "../../blockly/generators/queueGenerator";
+import "../../blockly/generators/my_language/stackGenerator";
+import "../../blockly/generators/my_language/listGenerator";
+import "../../blockly/generators/my_language/queueGenerator";
 
 import { javascriptGenerator } from "blockly/javascript";
-import { cGenerator } from "../../blockly/generators/cGenerator";
+
+import { generateC } from "../../blockly/generators/c_language/CGenerateDispatcher";
 
 import { useTheme } from "../../theme/useTheme";
+import { useError } from "../../error/useError";
+import { useAuth } from "../../autenticator/useAuth";
 
-export default function BlocklyEditor({ toolbox, setCode, setCCode, setBlockCount, blockCount }) {
+export default function BlocklyEditor({
+  toolbox,
+  setCode,
+  setCCode,
+  setBlockCount,
+  blockCount
+}) {
   const blocklyDiv = useRef(null);
   const workspaceRef = useRef(null);
   const debounceRef = useRef(null);
@@ -25,12 +34,16 @@ export default function BlocklyEditor({ toolbox, setCode, setCCode, setBlockCoun
   const [initError, setInitError] = useState(false);
 
   const { theme } = useTheme();
+  const { showError } = useError();
+  const { structure } = useAuth();
 
   const isListToolbox = toolbox?.list;
 
-  // 🔥 CRIA WORKSPACE COM TRATAMENTO DE ERRO
+  // 🔥 INIT WORKSPACE
   useEffect(() => {
     try {
+      if (!blocklyDiv.current) return;
+
       workspaceRef.current = Blockly.inject(blocklyDiv.current, {
         toolbox: toolbox?.list || toolbox,
         trashcan: true,
@@ -42,50 +55,93 @@ export default function BlocklyEditor({ toolbox, setCode, setCCode, setBlockCoun
         },
         zoom: {
           controls: true,
-          wheel: true,
-        },
+          wheel: true
+        }
       });
-      
+
       workspaceRef.current.addChangeListener((event) => {
-        if (event.isUiEvent) return;
+        try {
+          if (event.isUiEvent) return;
+          if (!workspaceRef.current) return;
 
-        clearTimeout(debounceRef.current);
+          clearTimeout(debounceRef.current);
 
-        debounceRef.current = setTimeout(() => {
-          try {
-            const codeJS =
-              javascriptGenerator.workspaceToCode(workspaceRef.current);
+          debounceRef.current = setTimeout(() => {
+            try {
+              if (!workspaceRef.current) return;
 
-            setCode(codeJS);
+              // 🔥 JS CODE
+              let codeJS = "";
+              try {
+                codeJS =
+                  javascriptGenerator.workspaceToCode(
+                    workspaceRef.current
+                  ) || "";
+              } catch (err) {
+                showError({
+                  message: "Erro ao gerar código Javascript: " + err.message
+                });
+                return;
+              }
 
-            const codeC = cGenerator(workspaceRef.current);
-            setCCode(codeC);
+              setCode(codeJS);
 
-            // 🔥 CONTAGEM DE BLOCOS
-            if (setBlockCount) {
-              const count = workspaceRef.current.getAllBlocks(false).length;
-              setBlockCount(count);
+              // 🔥 C CODE
+              let codeC = "";
+              try {
+                codeC =
+                  generateC(workspaceRef.current, structure) || "";
+              } catch (err) {
+                showError({
+                  message: "Erro ao gerar código C: " + err.message
+                });
+                return;
+              }
+
+              setCCode(codeC);
+
+              // 🔥 BLOCK COUNT
+              if (setBlockCount) {
+                const count =
+                  workspaceRef.current.getAllBlocks(false).length;
+                setBlockCount(count);
+              }
+            } catch (err) {
+              console.error("Erro ao gerar código:", err);
+
+              showError({
+                message: err.message || "Erro ao gerar código"
+              });
             }
+          }, 200);
+        } catch (err) {
+          console.error("Erro no listener do Blockly:", err);
 
-          } catch (err) {
-            console.error("Erro ao gerar código:", err);
-          }
-        }, 200);
+          showError({
+            message: "Erro interno no editor Blockly"
+          });
+        }
       });
-
     } catch (err) {
       console.error("Erro ao iniciar Blockly:", err);
+
       setInitError(true);
+
+      showError({
+        message: "Erro ao inicializar o editor"
+      });
     }
 
-    
-
     return () => {
-      workspaceRef.current?.dispose();
+      try {
+        workspaceRef.current?.dispose();
+      } catch (err) {
+        console.warn("Erro ao destruir workspace:", err);
+      }
     };
-  }, [setBlockCount, setCCode, setCode, theme.border, toolbox]);
+  }, [toolbox, theme.border, setCode, setCCode, setBlockCount, structure, showError]);
 
-  // 🔥 ATUALIZA TOOLBOX
+  // 🔥 UPDATE TOOLBOX
   useEffect(() => {
     try {
       if (workspaceRef.current && toolbox?.list) {
@@ -93,10 +149,14 @@ export default function BlocklyEditor({ toolbox, setCode, setCCode, setBlockCoun
       }
     } catch (err) {
       console.error("Erro ao atualizar toolbox:", err);
+
+      showError({
+        message: "Erro ao atualizar toolbox"
+      });
     }
   }, [category, toolbox]);
 
-  // 🔥 THEME BLOCKLY
+  // 🔥 APPLY THEME
   useEffect(() => {
     try {
       if (!workspaceRef.current) return;
@@ -105,18 +165,10 @@ export default function BlocklyEditor({ toolbox, setCode, setCCode, setBlockCoun
         base: Blockly.Themes.Classic,
 
         blockStyles: {
-          list_blocks: {
-            colourPrimary: theme.blocks.list
-          },
-          stack_blocks: {
-            colourPrimary: theme.blocks.stack
-          },
-          queue_blocks: {
-            colourPrimary: theme.blocks.queue
-          },
-          logic_blocks: {
-            colourPrimary: theme.blocks.logic
-          }
+          list_blocks: { colourPrimary: theme.blocks.list },
+          stack_blocks: { colourPrimary: theme.blocks.stack },
+          queue_blocks: { colourPrimary: theme.blocks.queue },
+          logic_blocks: { colourPrimary: theme.blocks.logic }
         },
 
         componentStyles: {
@@ -129,19 +181,21 @@ export default function BlocklyEditor({ toolbox, setCode, setCCode, setBlockCoun
           scrollbarColour: theme.border,
           insertionMarkerColour: theme.primary,
           insertionMarkerOpacity: 0.3,
-
           cursorColour: theme.primary
         }
       });
 
       workspaceRef.current.setTheme(customTheme);
-
     } catch (err) {
       console.error("Erro ao aplicar tema:", err);
-    }
-  }, [theme]);
 
-  // ❌ FALLBACK UI (SEM QUEBRAR APP)
+      showError({
+        message: "Erro ao aplicar tema do editor"
+      });
+    }
+  }, [showError, theme]);
+
+  // ❌ FALLBACK UI
   if (initError) {
     return (
       <div
@@ -165,14 +219,15 @@ export default function BlocklyEditor({ toolbox, setCode, setCCode, setBlockCoun
       className="flex h-full w-full rounded-xl"
       style={{ background: theme.workspace }}
     >
-
-      {/* 🔥 SIDEBAR */}
+      {/* SIDEBAR */}
       {isListToolbox && (
         <div
           className="w-14 border-r flex flex-col items-center gap-4 py-3"
-          style={{ background: theme.toolbox, borderColor: theme.border }}
+          style={{
+            background: theme.toolbox,
+            borderColor: theme.border
+          }}
         >
-
           <CategoryButton
             label="Lista"
             active={category === "list"}
@@ -214,45 +269,37 @@ export default function BlocklyEditor({ toolbox, setCode, setCCode, setBlockCoun
             onClick={() => setCategory("sort")}
             theme={theme}
           />
-
         </div>
       )}
 
-      {/* 🔥 WORKSPACE */}
+      {/* WORKSPACE */}
       <div className="flex-1 flex flex-col">
+        <div
+          className="px-4 py-3 flex justify-between items-center border-b"
+          style={{
+            background: theme.header,
+            borderColor: theme.border,
+            color: theme.text
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <div
+              className="px-4 py-2 rounded-full font-semibold"
+              style={{
+                background: theme.primary,
+                color: "#fff"
+              }}
+            >
+              Área de Programação
+            </div>
 
-        {/* HEADER */}
-      <div
-        className="px-4 py-3 flex justify-between items-center border-b"
-        style={{
-          background: theme.header,
-          borderColor: theme.border,
-          color: theme.text
-        }}
-      >
-        <div className="flex items-center gap-3">
-
-          <div
-            className="px-4 py-2 rounded-full font-semibold"
-            style={{
-              background: theme.primary,
-              color: "#fff"
-            }}
-          >
-            Área de Programação
+            <span style={{ color: theme.muted }}>
+              arraste e conecte os blocos
+            </span>
           </div>
-
-          <span style={{ color: theme.muted }}>
-            arraste e conecte os blocos
-          </span>
-
         </div>
-      </div>
 
-        {/* BLOCKLY */}
         <div className="flex-1 relative">
-
-          {/* 🧩 CONTADOR */}
           <div
             className="absolute top-3 right-3 px-3 py-2 rounded-lg text-sm font-semibold shadow z-10"
             style={{
@@ -264,17 +311,14 @@ export default function BlocklyEditor({ toolbox, setCode, setCCode, setBlockCoun
             🧩 {blockCount} blocos
           </div>
 
-          {/* BLOCKLY */}
           <div ref={blocklyDiv} className="h-full w-full" />
-
         </div>
-
       </div>
     </div>
   );
 }
 
-// 🔥 BOTÃO DA SIDEBAR
+// 🔥 BUTTON
 function CategoryButton({ label, active, onClick, theme }) {
   return (
     <div className="group relative">
@@ -287,7 +331,6 @@ function CategoryButton({ label, active, onClick, theme }) {
         }}
       />
 
-      {/* TOOLTIP */}
       <span
         className="absolute left-12 top-1/2 -translate-y-1/2 
         text-xs px-2 py-1 rounded whitespace-nowrap 

@@ -1,6 +1,4 @@
-import { Generator } from "blockly";
-
-export const CGenerator = new Generator("C");
+import CGenerator from "./CGeneratorBase";
 
 // 🔹 EXPRESSÕES
 CGenerator.forBlock['compare'] = function(block) {
@@ -46,7 +44,7 @@ CGenerator.forBlock['size'] = function(block) {
 };
 
 // 🔹 GERADOR PRINCIPAL
-export function cGenerator(workspace) {
+export function generateListC(workspace) {
   CGenerator.init(workspace);
 
   let indentLevel = 1;
@@ -189,7 +187,6 @@ export function cGenerator(workspace) {
 
       // IF
       if (current.type === "if") {
-        console.log("entrou no if");
         let conditionBlock = current.getInputTargetBlock("CONDITION");
 
         let condition = "0";

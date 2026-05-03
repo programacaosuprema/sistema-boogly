@@ -7,12 +7,51 @@ export const stackToolbox = {
 };
 
 export const queueToolbox = {
-  kind: "flyoutToolbox",
-  contents: [
-    {kind: "block", type: "queue_container"},
-    { kind: "block", type: "enqueue" },
-    { kind: "block", type: "dequeue" }
-  ]
+  list: {
+    kind: "flyoutToolbox",
+    contents: [
+      { kind: "block", type: "run_program" },
+      { kind: "block", type: "queue_container" },
+      { kind: "block", type: "queue_fixed" },
+      { kind: "block", type: "enqueue" },
+      { kind: "block", type: "dequeue" }
+    ]
+  },
+
+  state: {
+    kind: "flyoutToolbox",
+    contents: [
+      { kind: "block", type: "queue_front" },
+      { kind: "block", type: "queue_size" },
+      { kind: "block", type: "queue_is_empty" },
+      { kind: "block", type: "show" }
+    ]
+  },
+
+  variables: {
+    kind: "flyoutToolbox",
+    contents: [
+      { kind: "block", type: "variable" },
+      { kind: "block", type: "text" },
+      {kind: "block", type: "number"}
+    ]
+  },
+
+  conditions: {
+    kind: "flyoutToolbox",
+    contents: [
+      { kind: "block", type: "compare" },
+      { kind: "block", type: "if" },
+      { kind: "block", type: "if_else" }
+    ]
+  },
+
+  loops: {
+    kind: "flyoutToolbox",
+    contents: [
+      { kind: "block", type: "for_each" }
+    ]
+  }
 };
 
 export const toolboxCategories = {

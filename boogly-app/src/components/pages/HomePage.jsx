@@ -104,7 +104,7 @@ export default function Home() {
           title="Fila"
           description="Aprenda como funciona uma fila"
           gradient={homeTheme.queue.gradient}
-          disabled
+          onClick={() => handleStart("queue")}
         />
 
       </div>
