@@ -1,5 +1,6 @@
 import { Challenge } from "../models/challenge.model.js";
 import { UserChallenge } from "../models/userChallenge.model.js";
+import mongoose from "mongoose";
 
 // 🔥 CRIAR
 export const createChallenge = async (data) => {
@@ -51,5 +52,9 @@ export const getAllChallenges = async (userId) => {
 
 // 🔥 BUSCAR POR ID
 export const getChallengeById = async (id) => {
-  return await Challenge.findById(id);
+  if (mongoose.Types.ObjectId.isValid(id)) {
+    return await Challenge.findById(id);
+  }
+
+  return await Challenge.findOne({ publicId: id });
 };

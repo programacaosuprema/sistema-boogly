@@ -1,56 +1,50 @@
-import * as service from "../services/challenge.service.js";
-import { Challenge } from "../models/challenge.model.js"; // 🔥 ajuste o caminho
+// controllers/challenge.controller.js
 import mongoose from "mongoose";
+import { Challenge } from "../models/challenge.model.js";
+
+function validateExactConstruction(commands, input) {
+
+  const inserted = commands
+    .filter(c => c.type === "list_insert")
+    .map(c => c.value);
+
+  if (JSON.stringify(inserted) !== JSON.stringify(input)) {
+    return {
+      success: false,
+      message: "Você deve inserir exatamente os valores da entrada"
+    };
+  }
+
+  return { success: true };
+}
 
 export const create = async (req, res) => {
   try {
-    const { title, description, structure, testCases, rules, difficulty } = req.body;
-
-    const challenge = await Challenge.create({
-      title,
-      description,
-      structure,
-      testCases,
-      rules,
-      difficulty
-    });
-
+    const challenge = await Challenge.create(req.body);
     res.json(challenge);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-// 🔥 LISTAR DESAFIOS (COM STATUS + RESOLUÇÕES)
 export const getAll = async (req, res) => {
   try {
     const { structure, difficulty } = req.query;
 
     const filter = {};
-
-    // 🔥 filtro por estrutura
-    if (structure) {
-      filter.structure = structure;
-    }
-
-    // 🔥 filtro opcional por dificuldade
-    if (difficulty) {
-      filter.difficulty = difficulty;
-    }
+    if (structure) filter.structure = structure;
+    if (difficulty) filter.difficulty = difficulty;
 
     const challenges = await Challenge.find(filter);
-
-    return res.json(challenges);
-
-  } catch (error) {
-    return res.status(500).json({ error: error.message });
+    res.json(challenges);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 };
 
 export const getChallenge = async (req, res) => {
   try {
     const { id } = req.params;
-    const { structure } = req.query; // 👈 opcional
 
     let challenge;
 
@@ -64,91 +58,111 @@ export const getChallenge = async (req, res) => {
       return res.status(404).json({ error: "Challenge not found" });
     }
 
-    // 🔥 valida estrutura (opcional)
-    if (structure && challenge.structure !== structure) {
-      return res.status(400).json({
-        error: "Estrutura não corresponde ao desafio"
-      });
-    }
-
     res.json(challenge);
-
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 };
 
-function executeCommands(commands, input) {
-  let lista = [...input];  // começa com input
+/* =========================
+   EXECUÇÃO
+========================= */
+
+function executeWithSteps(commands) {
+
+  let lista = []; // 🔥 SEMPRE vazio
+
+  const steps = [];
 
   for (const cmd of commands) {
+
     switch (cmd.type) {
-      case "criar_lista":
-        lista = [];
+
+      case "list_insert":
+        if (cmd.value != null) lista.push(cmd.value);
         break;
 
-      case "inserir":
-        lista.push(cmd.value);
-        break;
-
-      case "remover_inicio":
+      case "list_remove_first":
         lista.shift();
         break;
 
-      case "reverse":
-        lista.reverse();
+      case "list_remove_last":
+        lista.pop();
         break;
 
-      default:
-        throw new Error(`Comando desconhecido: ${cmd.type}`);
+      case "list_invert":
+        lista.reverse();
+        break;
     }
+
+    steps.push({
+      command: cmd,
+      state: [...lista]
+    });
   }
 
-  return lista;
-}
-
-function arraysAreEqual(a, b) {
-  if (a.length !== b.length) return false;
-  return a.every((val, i) => val === b[i]);
+  return steps;
 }
 
 export const submitChallenge = async (req, res) => {
   try {
     const { id } = req.params;
-    const { userId, commands } = req.body;
+    const { commands } = req.body;
 
-    const challenge = await service.getChallengeById(id);
+    let challenge;
+
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      challenge = await Challenge.findById(id);
+    } else {
+      challenge = await Challenge.findOne({ publicId: id });
+    }
 
     if (!challenge) {
       return res.status(404).json({ message: "Challenge not found" });
     }
 
-    let passedAll = true;
-    let failedCase = null;
-    let finalOutput = null;
-
     for (const testCase of challenge.testCases) {
-      const output = executeCommands(commands, testCase.input);
 
-      finalOutput = output;
+      // 🔥 1. VALIDAR CONSTRUÇÃO
+      const inserted = commands
+        .filter(c => c.type === "list_insert")
+        .map(c => c.value);
 
-      if (!arraysAreEqual(output, testCase.expectedOutput)) {
-        passedAll = false;
-        failedCase = {
-          input: testCase.input,
+      const same =
+        JSON.stringify(inserted) === JSON.stringify(testCase.input);
+
+      if (!same) {
+        return res.json({
+          success: false,
+          message: "Você deve construir a lista exatamente igual à entrada",
+          expectedInput: testCase.input,
+          inserted
+        });
+      }
+
+      // 🔥 2. EXECUTA SEMPRE COMEÇANDO VAZIO
+      const steps = executeWithSteps(commands, [], "build");
+
+      const finalState = steps.at(-1)?.state || [];
+
+      const success =
+        JSON.stringify(finalState) ===
+        JSON.stringify(testCase.expectedOutput);
+
+      if (!success) {
+        return res.json({
+          success: false,
+          message: "Incorreto ❌",
           expected: testCase.expectedOutput,
-          received: output
-        };
-        break;
+          output: finalState,
+          steps
+        });
       }
     }
 
     return res.json({
-      success: passedAll,
-      output: finalOutput,
-      ...(passedAll
-        ? { message: "Correto 🎉" }
-        : { message: "Incorreto ❌", failedCase })
+      success: true,
+      message: "Correto 🎉"
     });
 
   } catch (error) {
