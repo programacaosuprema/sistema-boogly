@@ -194,7 +194,7 @@ export default function BlocklyEditor({
   }, [toolbox, theme.border, setCode, setCCode, setBlockCount, structure, showError, user?.id]);
 
   // 🔥 UPDATE TOOLBOX
-  useEffect(() => {
+  /*useEffect(() => {
     try {
       if (!workspaceRef.current) return;
 
@@ -211,6 +211,31 @@ export default function BlocklyEditor({
           contents: []
         });
       }
+    } catch (err) {
+      console.error("Erro ao atualizar toolbox:", err);
+
+      showError({
+        message: "Erro ao atualizar toolbox"
+      });
+    }
+  }, [category, toolboxVisible, toolbox, showError]);*/
+
+  useEffect(() => {
+    try {
+      if (!workspaceRef.current) return;
+
+      if (!toolboxVisible) return;
+
+      const nextToolbox =
+        toolbox?.[category] ||
+        toolbox?.list ||
+        toolbox?.queue ||
+        toolbox?.stack;
+
+      if (!nextToolbox || !nextToolbox.contents) return;
+
+      workspaceRef.current.updateToolbox(nextToolbox);
+
     } catch (err) {
       console.error("Erro ao atualizar toolbox:", err);
 

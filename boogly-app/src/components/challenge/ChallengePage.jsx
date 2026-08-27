@@ -7,7 +7,8 @@ import { ErrorPage } from "../pages/ErrorPage";
 
 import { useTheme } from "../../theme/useTheme";
 import { useError } from "../../error/useError";
-import { useLocation } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
+
 
 export default function ChallengePage() {
   const [challenges, setChallenges] = useState([]);
@@ -19,12 +20,9 @@ export default function ChallengePage() {
   const { showError } = useError();
 
   const navigate = useNavigate();
-
-  const location = useLocation();
-  const structure =
-  location.state?.structure ||
-  new URLSearchParams(location.search).get("structure") ||
-  "list";
+  
+  const [searchParams] = useSearchParams();
+  const structure = searchParams.get("structure") || "list";
 
   useEffect(() => {
     setLoading(true);  
@@ -232,12 +230,12 @@ export default function ChallengePage() {
             {challenges.map((c, index) => (
               <div
                 key={c.publicId || c._id}
-                onClick={() => navigate(`/app/challenges/${c.publicId}`)}
+                onClick={() => navigate(`/app/challenges/${c.publicId}?structure=${structure}`)}
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
-                    navigate(`/app/challenges/${c.publicId}`);
+                    navigate(`/app/challenges/${c.publicId}?structure=${structure}`);
                   }
                 }}
                 className="grid grid-cols-6 px-6 py-3 border-b cursor-pointer transition"

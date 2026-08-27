@@ -1,148 +1,149 @@
 import { useTheme } from "../../theme/useTheme";
 
-export function ChallengeResult({ result, attempts, onNext }) {
+export default function ChallengeResult({ result, onClose }) {
   const { theme } = useTheme();
 
-  // 🔒 SEGURANÇA
-  if (!result) {
-    return (
-      <div
-        className="p-6 rounded-xl"
-        style={{
-          background: `${theme.warning}15`,
-          border: `1px solid ${theme.warning}`
-        }}
-      >
-        <p style={{ color: theme.text }}>
-          ⚠️ Nenhum resultado disponível
-        </p>
-      </div>
-    );
-  }
+  if (!result) return null;
 
-  function calculateStars(result, attempts) {
-    if (!result.success) return 0;
-    if (attempts === 1) return 3;
-    if (attempts <= 3) return 2;
-    return 1;
-  }
-
-  function calculatePoints(stars, attempts) {
-    let base = 200;
-
-    if (stars === 3) base *= 1.2;
-    if (stars === 2) base *= 1.1;
-
-    base -= attempts * 10;
-
-    return Math.max(base, 50);
-  }
-
-  const stars = calculateStars(result, attempts);
-
-  // ✅ SUCESSO
-  if (result.success) {
-    return (
-      <div
-        className="p-6 rounded-xl"
-        style={{
-          background: `${theme.success}15`,
-          border: `1px solid ${theme.success}`
-        }}
-      >
-
-        <h2
-          className="text-xl font-bold mb-3"
-          style={{ color: theme.success }}
-        >
-          🎉 Muito bem!
-        </h2>
-
-        <p style={{ color: theme.text }}>
-          Você acertou a solução!
-        </p>
-
-        {/* ⭐ ESTRELAS */}
-        <div
-          className="text-xl mt-2"
-          style={{ color: theme.warning }}
-        >
-          {"⭐".repeat(stars)}
-        </div>
-
-        {/* 🧮 PONTOS */}
-        <div
-          className="mt-3 font-semibold"
-          style={{ color: theme.text }}
-        >
-          +{calculatePoints(stars, attempts)} pontos
-        </div>
-
-        {/* 🚀 BOTÃO */}
-        <button
-          onClick={onNext}
-          className="mt-4 px-4 py-2 rounded font-semibold transition"
-          style={{
-            background: theme.primary,
-            color: "#fff"
-          }}
-          onMouseEnter={(e) =>
-            (e.currentTarget.style.background = theme.hover)
-          }
-          onMouseLeave={(e) =>
-            (e.currentTarget.style.background = theme.primary)
-          }
-        >
-          Próximo desafio
-        </button>
-
-      </div>
-    );
-  }
-
-  // ❌ ERRO (SEGURO)
-  const failed =
-    result.results?.find(r => !r.passed) || null;
+  const isSuccess = result.success;
 
   return (
     <div
-      className="p-6 rounded-xl"
+      className="fixed inset-0 flex items-center justify-center"
       style={{
-        background: `${theme.danger}15`,
-        border: `1px solid ${theme.danger}`
+        background: "rgba(0,0,0,0.6)",
+        zIndex: 9999
       }}
     >
-
-      <h2
-        className="text-xl font-bold mb-3"
-        style={{ color: theme.danger }}
+      <div
+        className="rounded-xl w-[520px] p-6 shadow-xl"
+        style={{
+          background: theme.panel,
+          color: theme.text,
+          border: `1px solid ${theme.border}`
+        }}
       >
-        ❌ Algo deu errado...
-      </h2>
+        {/* HEADER */}
+        <div className="flex justify-between items-center mb-4">
+          <h2
+            className="text-lg font-bold"
+            style={{ color: theme.primary }}
+            >
+            Resultado da Execução
+          </h2>
 
-      {failed ? (
-        <>
-          <p style={{ color: theme.text }}>
-            <strong>Entrada:</strong>{" "}
-            {JSON.stringify(failed.input)}
-          </p>
+          <button
+            onClick={onClose}
+            style={{ color: theme.text }}
+          >
+            ✖
+          </button>
+        </div>
 
-          <p style={{ color: theme.text }}>
-            <strong>Esperado:</strong>{" "}
-            {JSON.stringify(failed.expected)}
-          </p>
+        {/* STATUS */}
+        <div className="mb-4 flex items-center gap-2">
+          <span
+            className="text-lg font-bold"
+            style={{
+              color: isSuccess ? "#22c55e" : "#ef4444"
+            }}
+          >
+            {isSuccess ? "✅ Correto!" : "❌ Incorreto"}
+          </span>
 
-          <p style={{ color: theme.text }}>
-            <strong>Recebido:</strong>{" "}
-            {JSON.stringify(failed.output)}
-          </p>
-        </>
-      ) : (
-        <p style={{ color: theme.text }}>
-          Não foi possível identificar o erro da execução.
-        </p>
-      )}
+          <span style={{ color: theme.textSecondary }}>
+            {result.message}
+          </span>
+        </div>
 
+        {/* RESULTADO FINAL */}
+        <div className="mb-4">
+          <strong>Resultado final:</strong>
+          <pre
+            className="p-2 rounded mt-1"
+            style={{
+              background: theme.background,
+              border: `1px solid ${theme.border}`
+            }}
+          >
+            {JSON.stringify(result.output ?? [])}
+          </pre>
+        </div>
+
+        {/* ERRO */}
+        {!isSuccess && (
+          <div className="mb-4">
+            <div>
+              <strong>Esperado:</strong>
+              <pre
+                className="p-2 rounded mt-1"
+                style={{
+                  background: "rgba(34,197,94,0.1)"
+                }}
+              >
+                {JSON.stringify(result.expected)}
+              </pre>
+            </div>
+
+            <div className="mt-2">
+              <strong>Seu resultado:</strong>
+              <pre
+                className="p-2 rounded mt-1"
+                style={{
+                  background: "rgba(239,68,68,0.1)"
+                }}
+              >
+                {JSON.stringify(result.output)}
+              </pre>
+            </div>
+          </div>
+        )}
+
+        {/* STEPS */}
+        {result.steps && (
+          <div className="max-h-48 overflow-y-auto mt-4">
+            <strong>Passo a passo:</strong>
+
+            <div className="mt-2 space-y-1">
+              {result.steps.map((step, i) => (
+                <div
+                  key={i}
+                  className="text-sm p-2 rounded flex justify-between"
+                  style={{
+                    background: theme.background,
+                    border: `1px solid ${theme.border}`
+                  }}
+                >
+                  <span style={{ color: theme.primary }}>
+                    {step.command.type}
+                    {step.command.value !== undefined && (
+                      <>({step.command.value})</>
+                    )}
+                  </span>
+
+                  <span>
+                    {JSON.stringify(step.state)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* FOOTER */}
+        <div className="mt-5 flex justify-end">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 rounded-lg"
+            style={{
+              background: theme.hover,
+              color: theme.text
+            }}
+          >
+            Fechar
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

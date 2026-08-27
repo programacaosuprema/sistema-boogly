@@ -11,7 +11,11 @@ const MainApp = lazy(() => import("./components/pages/MainApp"));
 const EditorPage = lazy(() => import("./components/pages/EditorPage"));
 
 const ChallengePage = lazy(() => import("./components/challenge/ChallengePage"));
-const ChallengeDetail = lazy(() => import("./components/challenge/ChallengeDetail"));
+const ChallengeDetail = lazy(() =>
+  import("./components/challenge/ChallengeDetail").then(module => ({
+    default: module.default
+  }))
+);
 
 // 🔒 PROTECTED ROUTE
 function ProtectedRoute({ children }) {
