@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+// src/pages/EditorPage.jsx
+import { useState, useRef, useEffect } from "react";
 
 import BlocklyEditor from "../blockly/BlocklyEditor";
 
@@ -181,12 +182,12 @@ export default function EditorPage() {
       style={{ background: theme.background }}
     >
 
-      {/* MAIN */}
+      {/* MAIN: duas colunas 50% / 50% */}
       <div className="flex flex-1 min-h-0 gap-3">
 
-        {/* BLOCKLY */}
+        {/* ESQUERDA — EDITOR (50%) */}
         <section
-          className="flex-1 rounded-xl overflow-hidden"
+          className="w-1/2 min-h-0 rounded-xl overflow-hidden"
           style={{ background: theme.workspace }}
         >
           <BlocklyEditor
@@ -198,170 +199,203 @@ export default function EditorPage() {
           />
         </section>
 
-        {/* SIMULAÇÃO */}
+        {/* DIREITA — SIMULAÇÃO + HISTÓRICO + CÓDIGO (50%) */}
         <section
-          className="flex-1 min-h-0 rounded-xl p-4 flex flex-col gap-4 overflow-hidden"
-          style={{ background: theme.panel }}
+          className="w-1/2 min-h-0 flex flex-col gap-3"
         >
 
-          {/* CONTROLES */}
-          <div className="flex items-center gap-3 flex-wrap">
+          {/* SIMULAÇÃO (top) */}
+          <div
+            className="flex-[3] min-h-0 rounded-xl p-4 flex flex-col gap-3 overflow-hidden"
+            style={{ background: theme.panel }}
+          >
 
-            <button
-              onClick={() => {
-                if (!isRunning && !isPaused) return handleRun();
-                if (isRunning) return handlePause();
-                if (isPaused) return handleContinue();
+            {/* CONTROLES */}
+            <div className="flex items-center gap-3 flex-wrap">
+              <button
+                onClick={() => {
+                  if (!isRunning && !isPaused) return handleRun();
+                  if (isRunning) return handlePause();
+                  if (isPaused) return handleContinue();
+                }}
+                className="px-4 py-2 rounded-lg font-semibold"
+                style={{ background: theme.success, color: "#fff" }}
+              >
+                {!isRunning && !isPaused && "▶ Executar"}
+                {isRunning && "⏸ Pausar"}
+                {isPaused && "▶ Continuar"}
+              </button>
+
+              <button
+                onClick={handleNextStep}
+                className="px-4 py-2 rounded-lg font-semibold"
+                style={{ background: theme.primary, color: "#fff" }}
+              >
+                ⏭ Passo
+              </button>
+
+              <button
+                onClick={handleClear}
+                className="px-4 py-2 rounded-lg font-semibold"
+                style={{ background: theme.danger, color: "#fff" }}
+              >
+                🧹 Limpar
+              </button>
+
+              {/* speed control (mantido) */}
+              <div className="flex items-center gap-3 w-64 ml-auto">
+                <span style={{ color: theme.text }} className="text-sm w-10">
+                  {speed}x
+                </span>
+
+                <input
+                  type="range"
+                  min="0"
+                  max={speedOptions.length - 1}
+                  step="1"
+                  value={speedOptions.indexOf(speed)}
+                  onChange={(e) => {
+                    const index = Number(e.target.value);
+                    setSpeed(speedOptions[index]);
+                  }}
+                  className="w-full cursor-pointer"
+                  style={{
+                    background: theme.border,
+                    accentColor: theme.primary
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* VISUALIZAÇÃO — wrapper que foca/centraliza e limita overflow */}
+            <div
+              className="flex-1 min-h-0 rounded-xl p-3 border"
+              style={{
+                background: theme.card,
+                borderColor: theme.border,
+                display: "flex",
+                flexDirection: "column",
+                // garante que o container não empurre a coluna
+                overflow: "hidden",
+                boxSizing: "border-box"
               }}
-              className="px-4 py-2 rounded-lg font-semibold shadow transition"
-              style={{ background: theme.success, color: "#fff" }}
             >
-              {!isRunning && !isPaused && "▶ Executar"}
-              {isRunning && "⏸ Pausar"}
-              {isPaused && "▶ Continuar"}
-            </button>
-
-            <button
-              onClick={handleNextStep}
-              className="px-4 py-2 rounded-lg font-semibold shadow transition"
-              style={{ background: theme.primary, color: "#fff" }}
-            >
-              ⏭ Passo
-            </button>
-
-            <button
-              onClick={handleClear}
-              className="px-4 py-2 rounded-lg font-semibold shadow transition"
-              style={{ background: theme.danger, color: "#fff" }}
-            >
-              🧹 Limpar
-            </button>
-
-            {/* SPEED */}
-            <div className="flex items-center gap-3 w-64">
-
-              <span style={{ color: theme.text }} className="text-sm w-10">
-                {speed}x
-              </span>
-
-              <input
-                type="range"
-                min="0"
-                max={speedOptions.length - 1}
-                step="1"
-                value={speedOptions.indexOf(speed)}
-                onChange={(e) => {
-                  const index = Number(e.target.value);
-                  setSpeed(speedOptions[index]);
-                }}
-                className="w-full cursor-pointer"
+              {/* Inner center wrapper — garante centralização e scroll se necessário */}
+              <div
+                className="flex-1"
                 style={{
-                  background: theme.border,
-                  accentColor: theme.primary
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: "100%",
+                  height: "100%",
+                  overflow: "auto", // se o visualizador gerar muitos nós, aparece scrollbar aqui
+                  padding: 8,
+                  boxSizing: "border-box"
                 }}
-              />
+              >
+                {/* Content container: limita dimensão máxima para evitar expandir além do espaço */}
+                <div
+                  style={{
+                    maxWidth: "100%",
+                    maxHeight: "100%",
+                    width: "100%",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    overflow: "auto"
+                  }}
+                >
+                  <SimulatorComponent
+                    data={safeData}
+                    step={safeStep}
+                  />
+                </div>
+              </div>
+            </div>
 
+            {/* HISTÓRICO (abaixo da simulação, dentro da mesma coluna direita) */}
+            <div
+              ref={historyRef}
+              className="rounded-xl p-4 h-28 overflow-auto border"
+              style={{
+                background: theme.toolbox,
+                borderColor: theme.border
+              }}
+            >
+              <h3
+                className="text-sm font-semibold mb-2"
+                style={{ color: theme.muted }}
+              >
+                Histórico
+              </h3>
+
+              {steps.length === 0 && (
+                <p style={{ color: theme.muted }} className="text-sm">
+                  Nenhuma execução ainda
+                </p>
+              )}
+
+              {steps.slice(0, currentStep + 1).map((step, i) => {
+
+                const color =
+                  step.type === "add"
+                    ? theme.success
+                    : step.type === "remove"
+                    ? theme.danger
+                    : step.type === "create"
+                    ? theme.primary
+                    : theme.text;
+
+                const symbol =
+                  step.type === "add"
+                    ? "+"
+                    : step.type === "remove"
+                    ? "-"
+                    : "•";
+
+                return (
+                  <div
+                    key={i}
+                    className="text-sm flex gap-2 items-center px-2 py-1 rounded"
+                    style={{
+                      background:
+                        i === currentStep ? theme.hover : "transparent",
+                      borderLeft:
+                        i === currentStep
+                          ? `4px solid ${theme.primary}`
+                          : "none",
+                      opacity: i === currentStep ? 1 : 0.6
+                    }}
+                  >
+
+                    <span style={{ color }} className="font-bold">
+                      {symbol}
+                    </span>
+
+                    <span style={{ color: theme.text }}>
+                      {step.message} →{" "}
+                      {JSON.stringify(Object.values(step.state)[0] || [])}
+                    </span>
+
+                  </div>
+                );
+              })}
             </div>
 
           </div>
 
-          {/* VISUALIZAÇÃO */}
+          {/* RODAPÉ — CÓDIGO (fixo) */}
           <div
-            className="flex-1 min-h-0 rounded-xl p-4 overflow-auto border"
-            style={{
-              background: theme.card,
-              borderColor: theme.border
-            }}
+            className="h-56 rounded-xl overflow-hidden"
+            style={{ background: theme.panel }}
           >
-            <SimulatorComponent
-              data={safeData}
-              step={safeStep}
-            />
-          </div>
-
-          {/* HISTÓRICO */}
-          <div
-            ref={historyRef}
-            className="rounded-xl p-4 h-40 overflow-auto border"
-            style={{
-              background: theme.toolbox,
-              borderColor: theme.border
-            }}
-          >
-
-            <h3
-              className="text-sm font-semibold mb-2"
-              style={{ color: theme.muted }}
-            >
-              Histórico
-            </h3>
-
-            {steps.length === 0 && (
-              <p style={{ color: theme.muted }} className="text-sm">
-                Nenhuma execução ainda
-              </p>
-            )}
-
-            {steps.slice(0, currentStep + 1).map((step, i) => {
-
-              const color =
-                step.type === "add"
-                  ? theme.success
-                  : step.type === "remove"
-                  ? theme.danger
-                  : step.type === "create"
-                  ? theme.primary
-                  : theme.text;
-
-              const symbol =
-                step.type === "add"
-                  ? "+"
-                  : step.type === "remove"
-                  ? "-"
-                  : "•";
-
-              return (
-                <div
-                  key={i}
-                  className="text-sm flex gap-2 items-center px-2 py-1 rounded"
-                  style={{
-                    background:
-                      i === currentStep ? theme.hover : "transparent",
-                    borderLeft:
-                      i === currentStep
-                        ? `4px solid ${theme.primary}`
-                        : "none",
-                    opacity: i === currentStep ? 1 : 0.6
-                  }}
-                >
-
-                  <span style={{ color }} className="font-bold">
-                    {symbol}
-                  </span>
-
-                  <span style={{ color: theme.text }}>
-                    {step.message} →{" "}
-                    {JSON.stringify(Object.values(step.state)[0] || [])}
-                  </span>
-
-                </div>
-              );
-            })}
-
+            <CodePanel cCode={cCode} />
           </div>
 
         </section>
 
       </div>
-
-      {/* CÓDIGO */}
-      <footer
-        className="h-56 p-3 overflow-hidden"
-        style={{ background: theme.panel }}
-      >
-        <CodePanel cCode={cCode} />
-      </footer>
-
     </div>
   );
 }

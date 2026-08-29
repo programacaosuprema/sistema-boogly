@@ -193,39 +193,20 @@ export default function BlocklyEditor({
     };
   }, [toolbox, theme.border, setCode, setCCode, setBlockCount, structure, showError, user?.id]);
 
-  // 🔥 UPDATE TOOLBOX
-  /*useEffect(() => {
-    try {
-      if (!workspaceRef.current) return;
-
-      if (toolboxVisible) {
-        workspaceRef.current.updateToolbox(
-          toolbox[category] ||
-          toolbox.list ||
-          toolbox.queue ||
-          toolbox.stack
-        );
-      } else {
-        workspaceRef.current.updateToolbox({
-          kind: "flyoutToolbox",
-          contents: []
-        });
-      }
-    } catch (err) {
-      console.error("Erro ao atualizar toolbox:", err);
-
-      showError({
-        message: "Erro ao atualizar toolbox"
-      });
-    }
-  }, [category, toolboxVisible, toolbox, showError]);*/
-
   useEffect(() => {
     try {
       if (!workspaceRef.current) return;
 
-      if (!toolboxVisible) return;
+      // 🔥 SE ESTIVER OCULTO → REMOVE TODOS OS BLOCOS
+      if (!toolboxVisible) {
+        workspaceRef.current.updateToolbox({
+          kind: "flyoutToolbox",
+          contents: []
+        });
+        return;
+      }
 
+      // 🔥 SE ESTIVER VISÍVEL → CARREGA NORMAL
       const nextToolbox =
         toolbox?.[category] ||
         toolbox?.list ||
@@ -434,8 +415,8 @@ export default function BlocklyEditor({
               }}
             >
               {toolboxVisible
-                ? "📂 Ocultar Blocos"
-                : "📁 Mostrar Blocos"}
+                ? "📂Ocultar Blocos"
+                : "📁Mostrar Blocos"}
             </button>
           )}
         </div>
@@ -449,7 +430,7 @@ export default function BlocklyEditor({
       color:
         saveStatus === "Salvando..."
           ? theme.primary
-          : saveStatus === "Restaurado"
+          : saveStatus === "Restaurado" 
           ? "#16a34a"
           : theme.text,
       border: `1px solid ${theme.border}`

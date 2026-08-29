@@ -43,10 +43,7 @@ export default function OnboardingFlow({ onFinish }) {
           },
           body: JSON.stringify({ onboardingDone: !!dontShow })
         });
-
-        // opcional: analisar resposta
-        const json = await res.json();
-
+        console.log(res);
         // após salvar no backend, atualiza o user no contexto
         await refreshUser();
       }
@@ -55,7 +52,7 @@ export default function OnboardingFlow({ onFinish }) {
     } catch (err) {
       console.error("Erro onboarding:", err);
       // em erro, tentar ainda atualizar e fechar
-      try { await refreshUser(); } catch(e) {}
+      try { await refreshUser(); } catch(e) {console.log(e);}
       onFinish?.();
     }
   }, [dontShow, token, user, domainUrl, onFinish, refreshUser]);

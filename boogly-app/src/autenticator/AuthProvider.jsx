@@ -32,6 +32,7 @@ export function AuthProvider({ children }) {
       return data;
     } catch (err) {
       // limpeza em caso de token inválido
+      console.log(err);
       localStorage.removeItem("token");
       setUser(null);
       setIsAuthenticated(false);
