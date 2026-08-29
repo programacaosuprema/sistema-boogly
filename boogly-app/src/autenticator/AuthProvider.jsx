@@ -1,8 +1,9 @@
-import { useState, useEffect, useContext } from "react";
-import { AuthContext } from "../autenticator/AuthContext";
+import { useState, useEffect, useContext, useCallback } from "react";
+import { AuthContext } from "./AuthContext";
 import { AppContext } from "../app_configuration/AppContext";
 import { clearGuestWorkspaces } from "../blockly/workspaceStorage";
 
+// Provider que expõe user, token, authenticate, loginAsGuest, logout, setStructure, setUser (update)
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -11,42 +12,48 @@ export function AuthProvider({ children }) {
 
   const { domainUrl } = useContext(AppContext);
 
-  // 🔥 RESTAURA SESSÃO AO ABRIR APP
+  // helper para buscar /users/me e atualizar user local
+  const fetchAndSetUser = useCallback(async (token) => {
+    try {
+      const res = await fetch(`${domainUrl}/users/me`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!res.ok) {
+        throw new Error("Falha ao buscar usuário");
+      }
+
+      const data = await res.json();
+      setUser(data);
+      setIsAuthenticated(true);
+      return data;
+    } catch (err) {
+      // limpeza em caso de token inválido
+      localStorage.removeItem("token");
+      setUser(null);
+      setIsAuthenticated(false);
+      return null;
+    }
+  }, [domainUrl]);
+
+  // restaura sessão no load
   useEffect(() => {
     const token = localStorage.getItem("token");
-
     if (!token) {
       setLoadingAuth(false);
       return;
     }
 
-    async function loadUser() {
-      try {
-        const res = await fetch(`${domainUrl}/users/me`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+    (async () => {
+      await fetchAndSetUser(token);
+      setLoadingAuth(false);
+    })();
+  }, [fetchAndSetUser]);
 
-        if (!res.ok) throw new Error();
-
-        const data = await res.json();
-
-        setUser(data);
-        setIsAuthenticated(true);
-      } catch {
-        localStorage.removeItem("token");
-        setUser(null);
-        setIsAuthenticated(false);
-      } finally {
-        setLoadingAuth(false);
-      }
-    }
-
-    loadUser();
-  }, [domainUrl]);
-
-  // 🔥 LOGIN
+  // LOGIN (email/nick) -> unificado com backend
   async function authenticate(identifier) {
     const res = await fetch(`${domainUrl}/auth`, {
       method: "POST",
@@ -62,15 +69,16 @@ export function AuthProvider({ children }) {
       throw new Error(data.error || "Erro na autenticação");
     }
 
+    // guarda token e busca user completo
     localStorage.setItem("token", data.token);
-    setUser(data.user);
-    setIsAuthenticated(true);
+    await fetchAndSetUser(data.token);
   }
 
-  // 🔥 LOGIN COMO VISITANTE
+  // LOGIN COMO VISITANTE
   async function loginAsGuest() {
     const res = await fetch(`${domainUrl}/auth/guest`, {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
     });
 
     const data = await res.json();
@@ -80,28 +88,46 @@ export function AuthProvider({ children }) {
     }
 
     localStorage.setItem("token", data.token);
-    setUser(data.user);
+
+    // o backend geralmente já retorna user, mas para uniformidade pede /users/me
+    // se a sua API retorna user completo, você pode usar data.user direto
+    const userFromApi = data.user ?? (await fetchAndSetUser(data.token));
+    setUser(userFromApi ?? data.user);
     setIsAuthenticated(true);
   }
 
-  // 🔥 LOGOUT
+  // LOGOUT
   function logout() {
-    // Seu schema usa o campo "guest"
+    // se era visitante, limpa workspaces etc
     if (user?.guest === true) {
-      clearGuestWorkspaces();
+      try {
+        clearGuestWorkspaces();
+      } catch (err) {
+        console.warn("Erro limpando workspaces guest:", err);
+      }
     }
 
+    // limpa token e session/local storage relacionados
     localStorage.removeItem("token");
+    sessionStorage.removeItem("onboarding_done");
+    // se você usou localStorage para onboarding dos guests, remova também:
+    localStorage.removeItem("onboarding_done");
 
     setUser(null);
     setIsAuthenticated(false);
     setStructure(undefined);
   }
 
+  // permite atualizar user (útil depois do onboarding para refletir mudança)
+  const updateUser = (patch) => {
+    setUser(prev => prev ? { ...prev, ...patch } : prev);
+  };
+
   return (
     <AuthContext.Provider
       value={{
         user,
+        token: localStorage.getItem("token"),
         isAuthenticated,
         loadingAuth,
 
@@ -111,6 +137,8 @@ export function AuthProvider({ children }) {
 
         structure,
         setStructure,
+
+        setUser: updateUser // expõe função para atualizar user localmente
       }}
     >
       {children}

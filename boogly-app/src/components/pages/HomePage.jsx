@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useContext} from "react";
 import AuthModal from "./AuthModal";
 import OnboardingFlow from "./OnBoardFlow";
 
@@ -8,11 +8,12 @@ import { useApp } from "../../app_configuration/useApp";
 import { useError } from "../../error/useError";
 
 import { homeTheme } from "../../theme/HomeTheme";
+import { AppContext } from "../../app_configuration/AppContext";
 
 export default function Home() {
-  const { user, loginAsGuest, setStructure } = useAuth();
+  const { user, token, loginAsGuest, setStructure } = useAuth();
   const { showError } = useError();
-
+  const {domainUrl } = useContext(AppContext);
   const [openModal, setOpenModal] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [selectedStructure, setSelectedStructure] = useState(null);
@@ -22,20 +23,57 @@ export default function Home() {
   const { appName } = useApp();
 
   // 🚀 INICIAR FLUXO
-  function handleStart(type) {
-    if (!type) {
-      showError({ message: "Estrutura inválida" });
+async function handleStart(type) {
+  if (!type) {
+    showError({ message: "Estrutura inválida" });
+    return;
+  }
+
+  if (!user) {
+    setOpenModal(true);
+    return;
+  }
+
+  setSelectedStructure(type);
+
+  try {
+    // 👻 GUEST → usa localStorage (isolado)
+    if (user.guest) {
+      const done = sessionStorage.getItem("onboarding_done");
+
+      if (done === "true") {
+        setStructure(type);
+        navigate("/app");
+        return;
+      }
+
+      setShowOnboarding(true);
       return;
     }
 
-    if (!user) {
-      setOpenModal(true);
-      return;
+    // 👤 USER REAL → usa banco
+    const res = await fetch(`${domainUrl}/users/me`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    const data = await res.json();
+
+    console.log("USER:", data);
+
+    if (data.onboardingDone === true) {
+      setStructure(type);
+      navigate("/app");
+    } else {
+      setShowOnboarding(true);
     }
 
-    setSelectedStructure(type);
+  } catch (err) {
+    console.error(err);
     setShowOnboarding(true);
   }
+}
 
   // 🧠 FINAL DO ONBOARDING
   function finishOnboarding() {
