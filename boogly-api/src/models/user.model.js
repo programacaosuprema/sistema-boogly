@@ -1,22 +1,16 @@
+// models/user.model.js
 import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema({
-
   nickname: {
     type: String,
     required: true,
     trim: true
   },
-
   email: {
     type: String,
     required: true,
     unique: true
-  },
-
-  points: {
-    type: Number,
-    default: 0
   },
 
   authCode: {
@@ -26,10 +20,16 @@ const userSchema = new mongoose.Schema({
     type: Date
   },
   guest: {
-  type: Boolean,
-  default: false
-}
+    type: Boolean,
+    default: false
+  },
 
+  // novo campo para controlar o onboarding
+  onboardingDone: {
+    type: Boolean,
+    default: false,
+    index: true
+  }
 }, { timestamps: true });
 
 export const User = mongoose.model("User", userSchema);

@@ -24,7 +24,6 @@ export const authenticate = async (req, res) => {
       user = await User.create({
         email,
         nickname: finalNick,
-        points: 0,
       });
     }
 
@@ -76,7 +75,6 @@ export const loginGuest = async (req, res) => {
     const user = await User.create({
       email: `guest_${Date.now()}@guest.com`, // fake
       nickname,
-      points: 0,
       guest: true // 🔥 importante
     });
 
