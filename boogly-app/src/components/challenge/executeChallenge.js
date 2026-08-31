@@ -9,30 +9,40 @@ const simulators = {
 };
 
 export function executeChallenge(code, structure, testCases = []) {
-
   const Simulator = simulators[structure];
-  if (!Simulator) return { success: false };
 
-  let results = [];
+  if (!Simulator) {
+    return { success: false, error: "Invalid structure" };
+  }
+
+  const results = [];
 
   for (const test of testCases) {
-
     const simulator = new Simulator();
-    const lines = code.split("\n");
 
-    // 🔥 inicializa input
+    // 🔥 1. INICIALIZAÇÃO CORRETA
     if (structure === "list") {
-      simulator.criar_lista("lista");
-
-      test.input.forEach(v => {
-        simulator.inserir(v, "lista");
-      });
+      simulator.criar_lista?.("lista");
+      test.input.forEach(v => simulator.inserir?.(v, "lista"));
     }
 
-    lines.forEach(line => {
+    if (structure === "stack") {
+      simulator.criar_pilha?.("pilha");
+      test.input.forEach(v => simulator.empilhar?.(v, "pilha"));
+    }
 
-      const match = line.match(/(\w+)\((.*?)\)/);
-      if (!match) return;
+    if (structure === "queue") {
+      simulator.criar_fila?.("fila");
+      test.input.forEach(v => simulator.enfileirar?.(v, "fila"));
+    }
+
+    // 🔥 2. EXECUÇÃO DO CÓDIGO (regex corrigida)
+    const lines = code.split("\n");
+
+    for (const line of lines) {
+      const match = line.match(/(\w+)\((.*?)\)/); // ✅ corrigido
+
+      if (!match) continue;
 
       const operation = match[1];
 
@@ -51,11 +61,26 @@ export function executeChallenge(code, structure, testCases = []) {
       if (typeof simulator[operation] === "function") {
         simulator[operation](...args);
       }
+    }
 
-    });
+    // 🔥 3. PEGAR ESTADO CORRETO
+    const state = simulator.getState();
 
-    const output = simulator.getState()["lista"] || [];
+    let output = [];
 
+    if (structure === "list") {
+      output = state.lista?.data || state.lista || [];
+    }
+
+    if (structure === "stack") {
+      output = state.pilha?.data || state.pilha || [];
+    }
+
+    if (structure === "queue") {
+      output = state.fila?.data || state.fila || [];
+    }
+
+    // 🔥 4. VALIDAÇÃO
     const passed =
       JSON.stringify(output) === JSON.stringify(test.expectedOutput);
 
@@ -67,8 +92,13 @@ export function executeChallenge(code, structure, testCases = []) {
     });
   }
 
+  const first = results[0];
+
+  // 🔥 5. RETORNO COMPATÍVEL COM FRONT
   return {
     success: results.every(r => r.passed),
+    output: first?.output || [],
+    expected: first?.expected || [],
     results
   };
 }

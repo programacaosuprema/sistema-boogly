@@ -1,5 +1,5 @@
 export const stackToolbox = {
-  list: {
+  stack: {
     kind: "flyoutToolbox",
     contents: [
       { kind: "block", type: "stack_run_program" },
@@ -50,7 +50,7 @@ export const stackToolbox = {
 };
 
 export const queueToolbox = {
-  list: {
+  queue: {
     kind: "flyoutToolbox",
     contents: [
       { kind: "block", type: "queue_run_program" },

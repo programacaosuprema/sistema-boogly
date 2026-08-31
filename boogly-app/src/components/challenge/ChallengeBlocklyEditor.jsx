@@ -306,11 +306,23 @@ export default function ChallengeBlocklyEditor({
   useEffect(() => {
     try {
       if (!workspaceRef.current) return;
-      if (!toolboxVisible) return;
 
+      // 🔴 OCULTAR TOOLBOX
+      if (!toolboxVisible) {
+        workspaceRef.current.updateToolbox({
+          kind: "flyoutToolbox",
+          contents: []
+        });
+        return;
+      }
+
+      // 🟢 MOSTRAR TOOLBOX
       const nextToolbox = getToolboxForCategory(toolbox, category);
+
       if (!nextToolbox || !nextToolbox.contents) return;
+
       workspaceRef.current.updateToolbox(nextToolbox);
+
     } catch (err) {
       console.error("Erro ao atualizar toolbox:", err);
       showError({ message: "Erro ao atualizar toolbox" });
@@ -380,10 +392,6 @@ export default function ChallengeBlocklyEditor({
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="px-3 py-1 rounded text-xs font-bold" style={{ background: theme.card, color: theme.text, border: `1px solid ${theme.border}` }}>
-              🧩 {blockCountLocal} blocos
-            </div>
-
             <button
               onClick={() => setToolboxVisible(!toolboxVisible)}
               className="px-3 py-2 rounded-lg font-semibold transition"
@@ -403,6 +411,18 @@ export default function ChallengeBlocklyEditor({
         </div>
 
         <div className="flex-1 relative">
+          {/* 🧩 CONTADOR DE BLOCOS (overlay igual editor principal) */}
+          <div
+            className="absolute top-3 right-3 px-3 py-1 rounded-lg text-xs font-bold z-50"
+            style={{
+              background: theme.card,
+              color: theme.text,
+              border: `1px solid ${theme.border}`
+            }}
+          >
+            🧩 {blockCountLocal} blocos
+          </div>
+
           <div ref={blocklyDiv} className="h-full w-full" />
         </div>
       </div>
