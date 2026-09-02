@@ -137,20 +137,6 @@ export default function ChallengeDetail() {
     }
   }
 
-  // opcional: refetch do desafio do servidor (útil para atualizar dados após tentativa)
-  async function refreshChallengeFromServer() {
-    try {
-      const headers = { "Content-Type": "application/json" };
-      if (token) headers.Authorization = `Bearer ${token}`;
-      const res = await fetch(`${domainUrl}/challenges/${id}`, { headers });
-      if (!res.ok) return;
-      const data = await res.json();
-      setChallenge((prev) => ({ ...prev, ...data }));
-    } catch (err) {
-      console.warn("refreshChallengeFromServer error:", err);
-    }
-  }
-
   if (loading) return <div className="p-6">Carregando...</div>;
   if (!challenge) return <div className="p-6">Desafio não encontrado</div>;
 

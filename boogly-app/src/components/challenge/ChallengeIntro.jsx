@@ -1,8 +1,9 @@
-import { useState } from "react";
+// src/components/challenge/ChallengeIntro.jsx
+import { useState, useContext } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTheme } from "../../theme/useTheme";
 import { useError } from "../../error/useError";
 import { useAuth } from "../../autenticator/useAuth";
-import { useContext } from "react";
 import { AppContext } from "../../app_configuration/AppContext";
 
 export function ChallengeIntro({ challenge, onStart }) {
@@ -11,6 +12,7 @@ export function ChallengeIntro({ challenge, onStart }) {
   const { showError } = useError();
   const { token } = useAuth();
   const { domainUrl } = useContext(AppContext);
+  const navigate = useNavigate();
 
   const test = challenge.testCases?.[0] || null;
 
@@ -46,8 +48,31 @@ export function ChallengeIntro({ challenge, onStart }) {
   }
 
   return (
-    <div className="h-full flex items-center justify-center p-4" style={{ background: theme.background }}>
-      <div className="w-full max-w-4xl h-full max-h-[500px] rounded-2xl shadow-xl flex flex-col overflow-hidden" style={{ background: theme.panel, color: theme.text, border: `1px solid ${theme.border}` }}>
+    <div className="h-full p-4" style={{ background: theme.background, color: theme.text }}>
+      {/* HEADER — igual ao ChallengePage */}
+      <div className="mb-6">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 px-3 py-2 rounded-lg transition text-sm"
+          style={{ background: theme.card, color: theme.text }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = theme.hover)}
+          onMouseLeave={(e) => (e.currentTarget.style.background = theme.card)}
+        >
+          ← Voltar
+        </button>
+
+        {/* Use theme.primary como no ChallengePage para manter destaque em dark/light */}
+        <h2 className="text-2xl font-bold" style={{ color: theme.primary }}>
+          Desafios
+        </h2>
+        <p style={{ color: theme.muted }}>Resolva problemas e evolua suas habilidades</p>
+      </div>
+
+      {/* Card centralizado com conteúdo do intro (mesma largura que antes) */}
+      <div
+        className="w-full max-w-4xl h-full max-h-[500px] rounded-2xl shadow-xl flex flex-col overflow-hidden mx-auto"
+        style={{ background: theme.panel, color: theme.text, border: `1px solid ${theme.border}` }}
+      >
         <div className="px-5 py-3 text-lg font-bold shrink-0" style={{ background: theme.primary, color: "#fff" }}>
           {challenge.title || "Desafio"}
         </div>
@@ -56,9 +81,15 @@ export function ChallengeIntro({ challenge, onStart }) {
           {["descricao", "entrada", "regras"].map((t) => {
             const active = tab === t;
             return (
-              <button key={t} onClick={() => setTab(t)}
+              <button
+                key={t}
+                onClick={() => setTab(t)}
                 className="flex-1 py-2 text-sm font-semibold transition"
-                style={{ color: active ? theme.primary : theme.muted, borderBottom: active ? `2px solid ${theme.primary}` : "2px solid transparent" }}>
+                style={{
+                  color: active ? theme.primary : theme.muted,
+                  borderBottom: active ? `2px solid ${theme.primary}` : "2px solid transparent"
+                }}
+              >
                 {t}
               </button>
             );
@@ -70,7 +101,7 @@ export function ChallengeIntro({ challenge, onStart }) {
             <div className="leading-relaxed">
               <p>{challenge.description || "Sem descrição disponível."}</p>
               <p className="mt-2 text-xs" style={{ color: theme.muted }}>
-                OBS: Ao começar o desafio é contabilizado 1 (uma) tentativa global.
+                OBS: Ao começar o desafio é contabilizado 1 (uma) tentativa.
               </p>
             </div>
           )}
@@ -116,9 +147,13 @@ export function ChallengeIntro({ challenge, onStart }) {
         </div>
 
         <div className="p-3 border-t flex justify-center shrink-0" style={{ borderColor: theme.border }}>
-          <button onClick={handleStart} className="px-5 py-2 rounded-lg font-semibold transition" style={{ background: theme.primary, color: "#fff" }}
+          <button
+            onClick={handleStart}
+            className="px-5 py-2 rounded-lg font-semibold transition"
+            style={{ background: theme.primary, color: "#fff" }}
             onMouseEnter={(e) => (e.currentTarget.style.background = theme.hover)}
-            onMouseLeave={(e) => (e.currentTarget.style.background = theme.primary)}>
+            onMouseLeave={(e) => (e.currentTarget.style.background = theme.primary)}
+          >
             Começar desafio
           </button>
         </div>

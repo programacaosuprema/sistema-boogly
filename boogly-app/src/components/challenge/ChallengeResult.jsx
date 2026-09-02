@@ -1,5 +1,11 @@
 import { useTheme } from "../../theme/useTheme";
 
+function formatValue(value) {
+  if (value === null || value === undefined) return "nulo";
+  if (typeof value === "string") return value;
+  return JSON.stringify(value);
+}
+
 export default function ChallengeResult({ result, onClose }) {
   const { theme } = useTheme();
 
@@ -42,14 +48,6 @@ export default function ChallengeResult({ result, onClose }) {
 
         {/* STATUS */}
         <div className="mb-4 flex items-center gap-2">
-          <span
-            className="text-lg font-bold"
-            style={{
-              color: isSuccess ? "#22c55e" : "#ef4444"
-            }}
-          >
-            {isSuccess ? "✅ Correto!" : "❌ Incorreto"}
-          </span>
 
           <span style={{ color: theme.textSecondary }}>
             {result.message}
@@ -81,7 +79,7 @@ export default function ChallengeResult({ result, onClose }) {
                   background: "rgba(34,197,94,0.1)"
                 }}
               >
-                {JSON.stringify(result.expected)}
+                {formatValue(result.expected)}
               </pre>
             </div>
 
@@ -93,56 +91,11 @@ export default function ChallengeResult({ result, onClose }) {
                   background: "rgba(239,68,68,0.1)"
                 }}
               >
-                {JSON.stringify(result.output)}
+                {formatValue(result.output)}
               </pre>
             </div>
           </div>
         )}
-
-        {/* STEPS */}
-        {result.steps && (
-          <div className="max-h-48 overflow-y-auto mt-4">
-            <strong>Passo a passo:</strong>
-
-            <div className="mt-2 space-y-1">
-              {result.steps.map((step, i) => (
-                <div
-                  key={i}
-                  className="text-sm p-2 rounded flex justify-between"
-                  style={{
-                    background: theme.background,
-                    border: `1px solid ${theme.border}`
-                  }}
-                >
-                  <span style={{ color: theme.primary }}>
-                    {step.command.type}
-                    {step.command.value !== undefined && (
-                      <>({step.command.value})</>
-                    )}
-                  </span>
-
-                  <span>
-                    {JSON.stringify(step.state)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* FOOTER */}
-        <div className="mt-5 flex justify-end">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 rounded-lg"
-            style={{
-              background: theme.hover,
-              color: theme.text
-            }}
-          >
-            Fechar
-          </button>
-        </div>
       </div>
     </div>
   );

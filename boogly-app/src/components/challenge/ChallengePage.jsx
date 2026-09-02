@@ -10,6 +10,23 @@ import { useTheme } from "../../theme/useTheme";
 import { useError } from "../../error/useError";
 import { useAuth } from "../../autenticator/useAuth";
 
+/**
+ * Retorna percentual (solved / attempts) formatado em pt-BR com 2 casas decimais.
+ * Se attempts for 0 retorna "0,00 %".
+ */
+function getPercentageByResolutionsPTBR(solved = 0, attempts = 0) {
+  solved = Number(solved) || 0;
+  attempts = Number(attempts) || 0;
+
+  if (attempts === 0) return "0,00 %";
+
+  const pct = (solved / attempts) * 100;
+  return new Intl.NumberFormat("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(pct) + " %";
+}
+
 export default function ChallengePage() {
   const [challenges, setChallenges] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -227,7 +244,8 @@ export default function ChallengePage() {
           ← Voltar
         </button>
 
-        <h2 className="text-2xl font-bold">Desafios</h2>
+        {/* Use theme.primary para manter o h2 colorido em temas escuros */}
+        <h2 className="text-2xl font-bold" style={{ color: theme.primary }}>Desafios</h2>
         <p style={{ color: theme.muted }}>Resolva problemas e evolua suas habilidades</p>
       </div>
 
@@ -237,13 +255,12 @@ export default function ChallengePage() {
           <div className="min-w-[1050px]">
 
             {/* HEADER (agora 7 colunas) */}
-            <div className="grid grid-cols-7 px-6 py-3 text-sm border-b" style={{ color: theme.muted, borderColor: theme.border }}>
-              <span>Status</span>
+            <div className="grid grid-cols-6 px-6 py-3 text-sm border-b" style={{ color: theme.muted, borderColor: theme.border }}>
               <span>#</span>
+              <span>Status</span>
               <span>Nome</span>
               <span>Dificuldade</span>
-              <span>Resoluções Globais</span>
-              <span>Tentativas Globais</span>
+              <span>Percentual acertos</span>
               <span>Minhas Tentativas</span>
             </div>
 
@@ -254,16 +271,16 @@ export default function ChallengePage() {
                    role="button"
                    tabIndex={0}
                    onKeyDown={(e) => { if (e.key === "Enter") navigate(`/app/challenges/${c.publicId || c._id}?structure=${structure}`); }}
-                   className="grid grid-cols-7 px-6 py-3 border-b cursor-pointer transition"
+                   className="grid grid-cols-6 px-6 py-3 border-b cursor-pointer transition"
                    style={{ borderColor: theme.border }}
                    onMouseEnter={(e) => (e.currentTarget.style.background = theme.hover)}
                    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
               >
-                {/* status visual */}
-                <span>{getStatusUI(c.userStatus)}</span>
-
                 {/* index */}
                 <span style={{ color: theme.muted }}>{index + 1}</span>
+
+                {/* status visual */}
+                <span>{getStatusUI(c.userStatus)}</span>
 
                 {/* title */}
                 <span className="font-medium">{c.title}</span>
@@ -271,11 +288,10 @@ export default function ChallengePage() {
                 {/* difficulty */}
                 <span>{getDifficultyUI(c.difficulty)}</span>
 
-                {/* solvedCount global */}
-                <span>{(c.solvedCount || 0).toLocaleString()}</span>
-
-                {/* attempts global */}
-                <span>{c.attempts ?? 0}</span>
+               {/* percentual (exibe 12.34%) */}
+                <span style={{ color: theme.muted }}>
+                  {getPercentageByResolutionsPTBR(c.solvedCount ?? 0, c.attempts ?? 0)}
+                </span>
 
                 {/* minhas tentativas (individual do usuário) */}
                 <span style={{ color: theme.muted }}>

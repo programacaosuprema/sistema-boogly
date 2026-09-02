@@ -103,56 +103,68 @@ function resolveValueFromBlock(block) {
   return null;
 }
 
-/** Extrai a sequência de comandos respeitando ligações VALUE / inputs */
 function extractCommandsFromWorkspace(ws) {
-  const topBlocks = ws.getTopBlocks(true); // ordered top blocks
   const commands = [];
 
   function walk(block) {
     if (!block) return;
 
-    // build command for this block
     const type = block.type;
 
-    // try get direct field "VALUE" / "NUM"
     let value = null;
+
     try {
-      value = block.getFieldValue?.("VALUE") ?? block.getFieldValue?.("NUM") ?? null;
+      value =
+        block.getFieldValue?.("VALUE") ??
+        block.getFieldValue?.("NUM") ??
+        null;
+
       if (value !== null) {
         const n = Number(value);
         if (!Number.isNaN(n)) value = n;
       }
-    } catch (e) {
-      value = null;
-    }
+    } catch (e) {}
 
-    // if block has an input named "VALUE" or "VALUE_INPUT", try resolve its connected block
+    // tenta pegar valor de input conectado
     if (value === null) {
-      const possibleInputs = ["VALUE", "VALUE_INPUT", "INPUT", "ITEM", "NUM"];
-      for (const inputName of possibleInputs) {
-        try {
-          const target = block.getInputTargetBlock(inputName);
-          if (target) {
-            const resolved = resolveValueFromBlock(target);
-            if (resolved !== null) {
-              value = resolved;
-              break;
-            }
+      const inputs = block.inputList || [];
+
+      for (const input of inputs) {
+        const target = input.connection?.targetBlock();
+
+        if (target) {
+          const resolved = resolveValueFromBlock(target);
+          if (resolved !== null) {
+            value = resolved;
+            break;
           }
-        } catch (e) {}
+        }
       }
     }
 
-    // Special case: some "container" / header blocks shouldn't produce command
-    // (we still return them so backend can ignore if needed)
+    // 🚀 salva comando
     commands.push({ type, value });
 
-    // proceed along next chain
-    const next = block.getNextBlock && block.getNextBlock();
+    // 🔥 1. percorre inputs (filhos internos)
+    const inputs = block.inputList || [];
+
+    for (const input of inputs) {
+      const child = input.connection?.targetBlock();
+
+      if (child) {
+        walk(child);
+      }
+    }
+
+    // 🔥 2. percorre próximo bloco da cadeia
+    const next = block.getNextBlock?.();
     if (next) walk(next);
   }
 
-  topBlocks.forEach(t => walk(t));
+  const topBlocks = ws.getTopBlocks(true);
+
+  topBlocks.forEach((block) => walk(block));
+
   return commands;
 }
 
@@ -354,6 +366,9 @@ export default function ChallengeBlocklyEditor({
 
       // extrai comandos
       const commands = extractCommandsFromWorkspace(ws);
+
+      
+console.log("🔥 COMMANDS:", commands); 
       // chama parent
       await onRun?.(commands);
     } catch (err) {
