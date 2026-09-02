@@ -1,12 +1,13 @@
 // src/controllers/challenge.controller.js
 import mongoose from "mongoose";
-import { nanoid } from "nanoid";
 import { Challenge } from "../models/challenge.model.js";
 import { UserChallenge } from "../models/userChallenge.model.js";
 
-/**
- * Helper: encontrar challenge por _id ou publicId
- */
+function formatValue(value) {
+  if (value === null || value === undefined) return "nulo";
+  return value;
+}
+
 async function findChallengeByIdOrPublicId(id) {
   if (!id) return null;
   let challenge = null;
@@ -19,21 +20,97 @@ async function findChallengeByIdOrPublicId(id) {
   return challenge;
 }
 
-/**
- * GET /challenges
- * - Se req.userId estiver presente (middleware optionalAuth), junta status do usuário
+/** Normaliza comandos vindos do workspace:
+ * - remove blocos "valor" (base_number, base_text, base_variable, base_input...)
+ * - remove blocos container/header (ex: list_container)
+ * - mantém a ordem relativa dos comandos "reais"
  */
+function normalizeCommands(commands = []) {
+  const skipTypes = new Set([
+    "base_number",
+    "base_text",
+    "base_variable",
+    "base_input",
+    "base_not",
+    "list_container",
+    "queue_container",
+    "stack_container"
+  ]);
+
+  return (commands || []).filter(c => !skipTypes.has(c.type));
+}
+
+/** Executa sequência de comandos sobre uma lista inicial (clonando sempre) */
+function executeWithSteps(commands = [], startState = [], structure = "list") {
+  const lista = Array.isArray(startState) ? [...startState] : [];
+  const steps = [];
+
+  for (const cmd of commands) {
+    switch (cmd.type) {
+      // aceitar variantes de nomes (por segurança)
+      case "list_insert":
+      case "insert":
+      case "enqueue":
+      case "push":
+        // insere ao final
+        if (cmd.value !== undefined && cmd.value !== null) lista.push(cmd.value);
+        break;
+
+      case "list_remove_first":
+      case "remove_first":
+      case "dequeue":
+      case "pop_front":
+        lista.shift();
+        break;
+
+      case "list_remove_last":
+      case "remove_last":
+      case "pop":
+        lista.pop();
+        break;
+
+      case "list_invert":
+      case "invert":
+        lista.reverse();
+        break;
+
+      // consultas / não modificam: apenas registramos
+      case "list_get":
+      case "list_index":
+      case "list_size":
+      case "peek":
+      case "queue_front":
+      case "stack_peek":
+        // não muta o estado
+        break;
+
+      default:
+        // outros blocos ignorados (não lançamos erro aqui)
+        break;
+    }
+
+    steps.push({
+      command: cmd,
+      state: [...lista]
+    });
+  }
+
+  return steps;
+}
+
+/* ============================
+   Controllers públicos
+   ============================ */
+
 export const getAll = async (req, res) => {
   try {
     const { structure, difficulty } = req.query;
-
     const filter = {};
     if (structure) filter.structure = structure;
     if (difficulty) filter.difficulty = difficulty;
 
     const challenges = await Challenge.find(filter).lean();
 
-    // se houver usuário autenticado, buscar userChallenges e mesclar
     const userId = req.userId || null;
     if (userId) {
       const ucs = await UserChallenge.find({ userId }).lean();
@@ -51,12 +128,7 @@ export const getAll = async (req, res) => {
       return res.json(merged);
     }
 
-    // sem usuário -> só retorna challenges
-    const fallback = challenges.map(c => ({
-      ...c,
-      userStatus: c.userStatus || "pending"
-    }));
-
+    const fallback = challenges.map(c => ({ ...c, userStatus: "pending" }));
     return res.json(fallback);
   } catch (err) {
     console.error("getAll error:", err);
@@ -64,11 +136,6 @@ export const getAll = async (req, res) => {
   }
 };
 
-/**
- * GET /challenges/:id
- * - retorna challenge (por _id ou publicId)
- * - se user autenticado, inclui userStatus / userAttempts
- */
 export const getChallenge = async (req, res) => {
   try {
     const { id } = req.params;
@@ -91,46 +158,52 @@ export const getChallenge = async (req, res) => {
   }
 };
 
+/**
+ * Registro de tentativa simples (POST /challenges/:id/attempt)
+ * - se visitante (sem userId) apenas incrementa attempts global e retorna userAttempt: null
+ * - se usuário logado cria/atualiza UserChallenge.status=attempted e increments attempts
+ */
 export async function recordAttempt(req, res) {
   try {
     const challengeId = req.params.id;
-    const userId = req.userId; // vem do optionalAuth
+    const userId = req.userId || null;
 
-    // 🔥 visitante (sem login)
+    // visitante: incrementa apenas global
     if (!userId) {
-      await Challenge.findByIdAndUpdate(challengeId, {
-        $inc: { attempts: 1 }
-      });
-
+      // tenta tratar id como publicId também
+      const filter = mongoose.Types.ObjectId.isValid(challengeId) ? { _id: challengeId } : { publicId: challengeId };
+      await Challenge.findOneAndUpdate(filter, { $inc: { attempts: 1 } });
       return res.json({ userAttempt: null });
     }
 
-    // 🔥 usuário logado
-    const userChallenge = await UserChallenge.findOneAndUpdate(
-      { userId, challengeId },
-      {
-        $setOnInsert: {
-          status: "attempted",
-          attempts: 0
-        }
-      },
-      { upsert: true, new: true }
-    );
-
-    // 🔥 incrementa tentativa SEMPRE
-    userChallenge.attempts += 1;
-
-    // 🔥 se ainda não resolveu
-    if (userChallenge.status !== "completed") {
-      userChallenge.status = "attempted";
+    // usuário autenticado
+    // usar challenge _id internamente: resolve possível publicId -> _id
+    let challenge = null;
+    if (mongoose.Types.ObjectId.isValid(challengeId)) {
+      challenge = await Challenge.findById(challengeId);
+    }
+    if (!challenge) {
+      challenge = await Challenge.findOne({ publicId: challengeId });
+    }
+    if (!challenge) {
+      return res.status(404).json({ error: "Challenge not found" });
     }
 
+    const userChallenge = await UserChallenge.findOneAndUpdate(
+      { userId, challengeId: challenge._id },
+      {
+        $setOnInsert: { status: "attempted", attempts: 0 }
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+
+    // incrementa tentativa local e marca attempted se não estiver completed
+    userChallenge.attempts += 1;
+    if (userChallenge.status !== "completed") userChallenge.status = "attempted";
     await userChallenge.save();
 
-    // 🔥 incrementa global
-    await Challenge.findByIdAndUpdate(challengeId, {
-      $inc: { attempts: 1 }
-    });
+    // incrementa attempts global
+    await Challenge.updateOne({ _id: challenge._id }, { $inc: { attempts: 1 } });
 
     return res.json({
       userAttempt: {
@@ -140,14 +213,13 @@ export async function recordAttempt(req, res) {
     });
 
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Erro ao registrar tentativa" });
+    console.error("recordAttempt error:", err);
+    return res.status(500).json({ error: err.message || "Erro ao registrar tentativa" });
   }
 }
 
 /**
- * PATCH /challenges/:id/attempts
- * - só incrementa attempts global para o challenge (uso administrativo / rápido)
+ * incrementAttempts (admin helper)
  */
 export const incrementAttempts = async (req, res) => {
   try {
@@ -162,90 +234,82 @@ export const incrementAttempts = async (req, res) => {
   }
 };
 
-function executeWithSteps(commands, structure = "list") {
-  let lista = [];
-  const steps = [];
-
-  for (const cmd of commands) {
-    switch (cmd.type) {
-      case "list_insert":
-      case "insert":
-        if (cmd.value !== undefined && cmd.value !== null) lista.push(cmd.value);
-        break;
-      case "list_remove_first":
-      case "remove_first":
-        lista.shift();
-        break;
-      case "list_remove_last":
-      case "remove_last":
-        lista.pop();
-        break;
-      case "list_invert":
-      case "invert":
-        lista.reverse();
-        break;
-      default:
-        // ignore unknown
-        break;
-    }
-
-    steps.push({
-      command: cmd,
-      state: [...lista]
-    });
-  }
-
-  return steps;
-}
+/* ============================
+   Submissão / Execução
+   ============================ */
 
 /**
  * POST /challenges/:id/submit
- * - body: { commands: [...] }
- * - executa testes, retorna sucesso, output, steps, message
- * - atualiza UserChallenge: increments attempts and sets completed if success
- * - incrementa Challenge.solvedCount se success e user ainda não havia completed
+ * Body: { commands: [...] }
+ *
+ * Regras principais:
+ * - normalizeCommands() para filtrar blocos-valor que aparecem separados
+ * - se o usuário inseriu comandos de insert -> executa exatamente a sequência do usuário
+ * - se o usuário NÃO inseriu inserts -> pré-inicializa a lista com testCase.input antes de aplicar os comandos
+ * - valida requiredBlocks (challenge.requiredBlocks)
+ * - atualiza UserChallenge (attempts/status/completed) e Challenge.solvedCount quando apropriado
  */
 export const submitChallenge = async (req, res) => {
   try {
     const { id } = req.params;
-    const { commands } = req.body;
+    const commandsRaw = req.body?.commands || [];
 
     const challenge = await findChallengeByIdOrPublicId(id);
     if (!challenge) return res.status(404).json({ message: "Challenge not found" });
 
-    // execute each test case
+    // normaliza (filtra blocos-valor que aparecem como top blocks)
+    const normalized = normalizeCommands(commandsRaw);
+
+    // checa requiredBlocks (se houver)
+    if (Array.isArray(challenge.requiredBlocks) && challenge.requiredBlocks.length > 0) {
+      for (const rule of challenge.requiredBlocks) {
+        const count = normalized.filter(c => c.type === rule.type).length;
+        if (count < (rule.min || 1)) {
+          return res.json({
+            success: false,
+            message: `Use o bloco obrigatório: ${rule.type}`,
+            output: [],
+            steps: []
+          });
+        }
+      }
+    }
+
+    // Prepara execução para cada testCase
     const testCases = challenge.testCases || [];
+    if (!Array.isArray(testCases) || testCases.length === 0) {
+      return res.status(400).json({ message: "Challenge sem testCases definidos" });
+    }
+
     const aggregated = {
       success: true,
-      steps: null,
+      message: "Correto 🎉",
       output: null,
       expected: null,
-      message: "Correto"
+      steps: null
     };
 
-    // sempre reexecuta a partir de lista vazia (spec do seu sistema)
-    let overallSteps = [];
-    let finalOutput = [];
+    let userId = req.userId || null;
+
+    // flag: detecta se o usuário forneceu inserts manualmente
+    const userInsertedVals = normalized.filter(c => /insert|enqueue|push/i.test(c.type)).map(c => c.value);
 
     for (const testCase of testCases) {
-      // validate that inserted sequence equals testCase.input (se esse for seu requisito)
-      const inserted = (commands || []).filter(c => /insert/i.test(c.type)).map(c => c.value);
-      if (JSON.stringify(inserted) !== JSON.stringify(testCase.input)) {
-        aggregated.success = false;
-        aggregated.message = "Você deve construir a lista exatamente igual à entrada";
-        aggregated.expected = testCase.expectedOutput;
-        aggregated.output = inserted;
-        // run execution anyway to produce steps
-        const steps = executeWithSteps(commands, challenge.structure);
-        aggregated.steps = steps;
-        return res.json(aggregated);
-      }
+      // Determine startState:
+      // - se usuário incluiu inserts -> start vazio (eles inserem manualmente)
+      // - caso contrário -> start = testCase.input (pré-inicializa)
+      const startState = (userInsertedVals.length > 0) ? [] : (Array.isArray(testCase.input) ? [...testCase.input] : []);
 
-      const steps = executeWithSteps(commands, challenge.structure);
-      overallSteps = steps;
+      // Se o usuário não inseriu nada E usou apenas blocos de remoção (sem manipulacoes),
+      // ainda permitimos (porque startState será preenchido com testCase.input).
+      // Se você quiser proibir passar apenas com remove, adicione validação aqui.
+      const steps = executeWithSteps(normalized, startState, challenge.structure);
+
       const finalState = steps.at(-1)?.state || [];
 
       const passed = JSON.stringify(finalState) === JSON.stringify(testCase.expectedOutput);
+
+      // se falhou, retorna imediatamente com steps e estado
       if (!passed) {
         aggregated.success = false;
         aggregated.message = "Incorreto ❌";
@@ -254,23 +318,20 @@ export const submitChallenge = async (req, res) => {
         aggregated.steps = steps;
         break;
       } else {
-        // passed this test; continue to next
+        // passou esse test -> continue
         aggregated.steps = steps;
         aggregated.output = finalState;
       }
     }
 
-    // update user and challenge state if success
-    const userId = req.userId || null;
-
-    // increment global attempts for the challenge (each submit counts)
+    // Sempre conta como uma tentativa global (cada submit)
     await Challenge.updateOne({ _id: challenge._id }, { $inc: { attempts: 1 } });
 
+    // Atualiza UserChallenge conforme sucesso/falha
     let userChallengeDoc = null;
     if (userId) {
-      // increment attempts; if success, set completed
       if (aggregated.success) {
-        // If user had no previous completed, increment solvedCount and mark completed
+        // marca completed e incrementa attempts
         userChallengeDoc = await UserChallenge.findOneAndUpdate(
           { userId, challengeId: challenge._id },
           {
@@ -280,23 +341,13 @@ export const submitChallenge = async (req, res) => {
           { new: true, upsert: true, setDefaultsOnInsert: true }
         );
 
-        // If this user is completing for first time, increment solvedCount
-        // Check if previously completed (we can check upsert's wasNew not reliable with findOneAndUpdate),
-        // so query previous
-        // Simpler approach: if userChallengeDoc.attempts === 1 and previous status wasn't completed, increment solvedCount
-        // but to be safe fetch previous:
-        const prev = await UserChallenge.findOne({ userId, challengeId: challenge._id });
-        // if prev existed and prev.status !== 'completed' then inc solvedCount
-        // (Because we already updated, prev might be after update — so to be safe: query history by looking at a flag is tricky.
-        // We'll increment solvedCount if aggregated.success and there is no other record of completion by this user.)
-        const alreadyCompleted = await UserChallenge.exists({ userId, challengeId: challenge._id, status: "completed", _id: { $ne: userChallengeDoc._id } });
-        if (!alreadyCompleted) {
-          // increment solvedCount by 1 (idempotency not perfect but acceptable)
+        // incrementa solvedCount apenas se o usuário não tinha completado antes
+        const hadCompletedBefore = await UserChallenge.exists({ userId, challengeId: challenge._id, status: "completed", _id: { $ne: userChallengeDoc._id } });
+        if (!hadCompletedBefore) {
           await Challenge.updateOne({ _id: challenge._id }, { $inc: { solvedCount: 1 } });
         }
-
       } else {
-        // not success: just increment attempts and set status attempted (if not completed)
+        // falhou -> apenas incrementa attempts e set attempted
         userChallengeDoc = await UserChallenge.findOneAndUpdate(
           { userId, challengeId: challenge._id },
           {
@@ -311,8 +362,8 @@ export const submitChallenge = async (req, res) => {
     return res.json({
       success: aggregated.success,
       message: aggregated.message,
-      output: aggregated.output,
-      expected: aggregated.expected,
+      output: formatValue(aggregated.output),
+      expected: formatValue(aggregated.expected),
       steps: aggregated.steps,
       userAttempt: userChallengeDoc ? { attempts: userChallengeDoc.attempts, status: userChallengeDoc.status } : null
     });
@@ -326,12 +377,7 @@ export const submitChallenge = async (req, res) => {
 export const create = async (req, res) => {
   try {
     const data = req.body;
-
-    const challenge = await Challenge.create({
-      ...data,
-      publicId: nanoid(10)
-    });
-
+    const challenge = await Challenge.create({ ...data, publicId: nanoid(10) });
     res.status(201).json(challenge);
   } catch (err) {
     console.error("create error:", err);
