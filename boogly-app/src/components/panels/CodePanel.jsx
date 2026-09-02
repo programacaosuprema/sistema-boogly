@@ -11,7 +11,6 @@ export default function CodePanel({ cCode }) {
 
   const { theme } = useTheme();
 
-  // copiar código
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(cCode || "");
@@ -41,41 +40,69 @@ export default function CodePanel({ cCode }) {
   }, [cCode]);
 
   return (
-    // ocupa toda a altura do contêiner pai (use h-full no pai)
-    <div className="flex flex-col h-full overflow-hidden" style={{ background: theme.panel, borderColor: theme.border }}>
-      {/* HEADER fixo */}
+    <div
+      className="flex flex-col h-full overflow-hidden"
+      style={{
+        background: theme.panel,
+        border: `1px solid ${theme.border}`,
+        borderRadius: "12px"
+      }}
+    >
+      {/* HEADER */}
       <div
-        className="flex items-center justify-between px-4 py-2 border-b"
-        style={{ borderColor: theme.border }}
+        className="flex items-center justify-between"
+        style={{
+          padding: theme.spacing.md,
+          borderBottom: `1px solid ${theme.border}`
+        }}
       >
-        <div className="flex items-center gap-4">
-          <h3 className="text-sm font-semibold" style={{ color: theme.text }}>
+        <div className="flex items-center" style={{ gap: theme.spacing.md }}>
+          <h3
+            style={{
+              ...theme.typography.h3,
+              color: theme.text
+            }}
+          >
             Código Gerado
           </h3>
 
           <select
             value={language}
             onChange={(e) => setLanguage(e.target.value)}
-            className="text-sm px-2 py-1 rounded"
-            style={{ background: theme.toolbox, color: theme.text }}
+            style={{
+              padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
+              borderRadius: "6px",
+              background: theme.toolbox,
+              color: theme.text,
+              border: `1px solid ${theme.border}`,
+              fontSize: theme.typography.small.fontSize,
+              cursor: "pointer"
+            }}
           >
             <option value="c">C</option>
-            {/* se quiser suportar mais linguagens, adicione aqui */}
           </select>
         </div>
 
-        <div className="flex items-center gap-2">
-          <ActionButton onClick={handleDownload} icon={Download} variant="success">
+        <div className="flex items-center" style={{ gap: theme.spacing.sm }}>
+          <ActionButton
+            onClick={handleDownload}
+            icon={Download}
+            variant="success"
+          >
             Baixar .c
           </ActionButton>
 
-          <ActionButton onClick={handleCopy} icon={Clipboard} variant="primary">
+          <ActionButton
+            onClick={handleCopy}
+            icon={Clipboard}
+            variant="primary"
+          >
             {copied ? "Copiado!" : "Copiar código"}
           </ActionButton>
         </div>
       </div>
 
-      {/* EDITOR - ocupa o resto do espaço */}
+      {/* EDITOR */}
       <div className="flex-1 min-h-0">
         <Editor
           height="100%"
@@ -86,9 +113,14 @@ export default function CodePanel({ cCode }) {
             readOnly: true,
             minimap: { enabled: false },
             fontSize: 14,
+            fontFamily: "Fira Code, monospace", // 🔥 melhora visual
             wordWrap: "on",
             automaticLayout: true,
-            scrollBeyondLastLine: false
+            scrollBeyondLastLine: false,
+            padding: {
+              top: 12,
+              bottom: 12
+            }
           }}
         />
       </div>

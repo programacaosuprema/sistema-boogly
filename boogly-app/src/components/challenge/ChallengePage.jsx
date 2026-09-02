@@ -180,25 +180,30 @@ export default function ChallengePage() {
 
   // 🔥 UI helpers (mantive seu visual)
   function getStatusUI(status) {
+    const baseStyle = {
+      ...theme.typography.badge,
+      padding: "4px 8px",
+      borderRadius: "999px"
+    };
+
     switch (status) {
       case "completed":
         return (
-          <span className="px-2 py-1 rounded-full text-xs font-semibold"
-            style={{ background: `${theme.success}20`, color: theme.success }}>
+          <span style={{ ...baseStyle, background: `${theme.success}20`, color: theme.success }}>
             🟢 Concluído
           </span>
         );
+
       case "attempted":
         return (
-          <span className="px-2 py-1 rounded-full text-xs font-semibold"
-            style={{ background: `${theme.warning}20`, color: theme.warning }}>
+          <span style={{ ...baseStyle, background: `${theme.warning}20`, color: theme.warning }}>
             🟡 Tentando
           </span>
         );
+
       default:
         return (
-          <span className="px-2 py-1 rounded-full text-xs font-semibold"
-            style={{ background: `${theme.danger}20`, color: theme.danger }}>
+          <span style={{ ...baseStyle, background: `${theme.danger}20`, color: theme.danger }}>
             🔴 Pendente
           </span>
         );
@@ -206,104 +211,178 @@ export default function ChallengePage() {
   }
 
   function getDifficultyUI(difficulty) {
+    const baseStyle = {
+      ...theme.typography.badge,
+      padding: "4px 8px",
+      borderRadius: "999px"
+    };
+
     switch (difficulty) {
       case "easy":
         return (
-          <span className="px-2 py-1 rounded-full text-xs font-semibold"
-            style={{ background: `${theme.success}20`, color: theme.success }}>
+          <span style={{ ...baseStyle, background: `${theme.success}20`, color: theme.success }}>
             Fácil
           </span>
         );
+
       case "medium":
-        return (
-          <span className="px-2 py-1 rounded-full text-xs font-semibold"
-            style={{ background: `${theme.warning}20`, color: theme.warning }}>
+          return (
+          <span style={{ ...baseStyle, background: `${theme.warning}20`, color: theme.warning }}>
             Médio
           </span>
         );
+
       default:
         return (
-          <span className="px-2 py-1 rounded-full text-xs font-semibold"
-            style={{ background: `${theme.danger}20`, color: theme.danger }}>
+          <span style={{ ...baseStyle, background: `${theme.danger}20`, color: theme.danger }}>
             Difícil
           </span>
         );
     }
   }
-
+  
   return (
-    <div className="h-full p-4 flex flex-col" style={{ background: theme.background, color: theme.text }}>
-      {/* HEADER */}
-      <div className="mb-6">
-        <button onClick={() => navigate(-1)}
-          className="flex items-center gap-2 px-3 py-2 rounded-lg transition text-sm"
-          style={{ background: theme.card, color: theme.text }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = theme.hover)}
-          onMouseLeave={(e) => (e.currentTarget.style.background = theme.card)}
+  <div
+    className="h-full flex flex-col"
+    style={{
+      background: theme.background,
+      color: theme.text,
+      padding: theme.spacing.lg
+    }}
+  >
+    {/* 🔥 HEADER */}
+    <div style={{ marginBottom: theme.spacing.lg }}>
+      
+      {/* 🔥 LINHA: VOLTAR + TÍTULO */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: theme.spacing.md,
+          marginBottom: theme.spacing.sm
+        }}
+      >
+        <button
+          onClick={() => navigate(-1)}
+          style={{
+            background: theme.card,
+            color: theme.text,
+            padding: `${theme.spacing.sm} ${theme.spacing.md}`,
+            borderRadius: "8px",
+            border: `1px solid ${theme.border}`,
+            cursor: "pointer",
+            ...theme.typography.small
+          }}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.background = theme.hover)
+          }
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.background = theme.card)
+          }
         >
           ← Voltar
         </button>
-
-        {/* Use theme.primary para manter o h2 colorido em temas escuros */}
-        <h2 className="text-2xl font-bold" style={{ color: theme.primary }}>Desafios</h2>
-        <p style={{ color: theme.muted }}>Resolva problemas e evolua suas habilidades</p>
       </div>
 
-      {/* TABELA */}
-      <div className="flex-1 overflow-hidden rounded-xl" style={{ background: theme.panel }}>
-        <div className="h-full overflow-x-auto">
-          <div className="min-w-[1050px]">
+      <h2
+          style={{
+            ...theme.typography.h2,
+            color: theme.primary
+          }}
+        >
+          Desafios
+        </h2>
 
-            {/* HEADER (agora 7 colunas) */}
-            <div className="grid grid-cols-6 px-6 py-3 text-sm border-b" style={{ color: theme.muted, borderColor: theme.border }}>
-              <span>#</span>
-              <span>Status</span>
-              <span>Nome</span>
-              <span>Dificuldade</span>
-              <span>Percentual acertos</span>
-              <span>Minhas Tentativas</span>
-            </div>
-
-            {/* LINHAS */}
-            {challenges.map((c, index) => (
-              <div key={c.publicId || c._id}
-                   onClick={() => navigate(`/app/challenges/${c.publicId || c._id}?structure=${structure}`)}
-                   role="button"
-                   tabIndex={0}
-                   onKeyDown={(e) => { if (e.key === "Enter") navigate(`/app/challenges/${c.publicId || c._id}?structure=${structure}`); }}
-                   className="grid grid-cols-6 px-6 py-3 border-b cursor-pointer transition"
-                   style={{ borderColor: theme.border }}
-                   onMouseEnter={(e) => (e.currentTarget.style.background = theme.hover)}
-                   onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-              >
-                {/* index */}
-                <span style={{ color: theme.muted }}>{index + 1}</span>
-
-                {/* status visual */}
-                <span>{getStatusUI(c.userStatus)}</span>
-
-                {/* title */}
-                <span className="font-medium">{c.title}</span>
-
-                {/* difficulty */}
-                <span>{getDifficultyUI(c.difficulty)}</span>
-
-               {/* percentual (exibe 12.34%) */}
-                <span style={{ color: theme.muted }}>
-                  {getPercentageByResolutionsPTBR(c.solvedCount ?? 0, c.attempts ?? 0)}
-                </span>
-
-                {/* minhas tentativas (individual do usuário) */}
-                <span style={{ color: theme.muted }}>
-                  {/* se backend não enviou userAttempts e usuário não autenticado, mostra "-" */}
-                  {typeof c.userAttempts !== "undefined" ? c.userAttempts : "-"}
-                </span>
-              </div>
-            ))}
-
-          </div>
-        </div>
-      </div>
+      {/* 🔥 SUBTÍTULO */}
+      <p
+        style={{
+          ...theme.typography.body,
+          color: theme.muted
+        }}
+      >
+        Resolva problemas e evolua suas habilidades
+      </p>
     </div>
-  );
+
+    {/* 🔥 TABELA */}
+    <div
+      style={{
+        background: theme.panel,
+        borderRadius: "12px",
+        overflow: "hidden",
+        border: `1px solid ${theme.border}`
+      }}
+    >
+      {/* HEADER */}
+      <div
+        className="grid grid-cols-6"
+        style={{
+          padding: theme.spacing.md,
+          ...theme.typography.small,
+          color: theme.muted,
+          borderBottom: `1px solid ${theme.border}`
+        }}
+      >
+        <span>#</span>
+        <span>Status</span>
+        <span style={{ fontWeight: "bold" }}>Nome</span>
+        <span>Dificuldade</span>
+        <span>% Acertos</span>
+        <span>Minhas Tentativas</span>
+      </div>
+
+      {/* LINHAS */}
+      {challenges.map((c, index) => (
+        <div
+          key={c._id}
+          onClick={() =>
+            navigate(
+              `/app/challenges/${c.publicId || c._id}?structure=${structure}`
+            )
+          }
+          className="grid grid-cols-6 cursor-pointer"
+          style={{
+            padding: theme.spacing.md,
+            borderBottom: `1px solid ${theme.border}`,
+            ...theme.typography.body,
+            alignItems: "center",
+            transition: "0.2s"
+          }}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.background = theme.hover)
+          }
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.background = "transparent")
+          }
+        >
+          <span style={{ color: theme.muted }}>{index + 1}</span>
+
+          <span>{getStatusUI(c.userStatus) || "pending"}</span>
+
+          {/* 🔥 NOME DESTACADO */}
+          <span
+            style={{
+              ...theme.typography.h3
+            }}
+          >
+            {c.title}
+          </span>
+
+          <span>{getDifficultyUI(c.difficulty)}</span>
+
+          <span style={{ color: theme.muted }}>
+            {getPercentageByResolutionsPTBR(
+              c.solvedCount,
+              c.attempts
+            )}
+          </span>
+
+          <span style={{ color: theme.muted }}>
+            {c.userAttempts ?? "-"}
+          </span>
+        </div>
+      ))}
+    </div>
+  </div>
+);
 }

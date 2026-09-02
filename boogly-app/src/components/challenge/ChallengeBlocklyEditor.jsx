@@ -103,6 +103,7 @@ function resolveValueFromBlock(block) {
   return null;
 }
 
+/** Extrai a sequência de comandos respeitando ligações VALUE / inputs */
 function extractCommandsFromWorkspace(ws) {
   const commands = [];
 
@@ -379,68 +380,127 @@ console.log("🔥 COMMANDS:", commands);
   }
 
   return (
-    <div className="flex h-full w-full rounded-xl" style={{ background: theme.workspace }}>
-      {/* SIDEBAR */}
+  <div
+    className="flex h-full w-full rounded-xl"
+    style={{
+      background: theme.workspace,
+      color: theme.text,
+      fontSize: theme.typography.body.fontSize
+    }}
+  >
+    {/* SIDEBAR */}
+    <div
+      className="flex flex-col items-center"
+      style={{
+        width: "56px",
+        gap: theme.spacing.sm,
+        padding: theme.spacing.sm,
+        background: theme.toolbox,
+        borderRight: `1px solid ${theme.border}`
+      }}
+    >
+      {(categoriesByStructure[detectedStructure] || []).map(([key, label]) => (
+        <CategoryButton
+          key={key}
+          label={label}
+          active={category === key}
+          onClick={() => setCategory(key)}
+          theme={theme}
+        />
+      ))}
+    </div>
+
+    {/* WORKSPACE + HEADER */}
+    <div className="flex-1 flex flex-col">
+      
+      {/* HEADER */}
       <div
-        className="w-14 border-r flex flex-col items-center gap-4 py-3"
-        style={{ background: theme.toolbox, borderColor: theme.border }}
+        className="flex justify-between items-center"
+        style={{
+          padding: theme.spacing.md,
+          background: theme.header,
+          borderBottom: `1px solid ${theme.border}`,
+          color: theme.text
+        }}
       >
-        {(categoriesByStructure[detectedStructure] || []).map(([key, label]) => (
-          <CategoryButton
-            key={key}
-            label={label}
-            active={category === key}
-            onClick={() => setCategory(key)}
-            theme={theme}
-          />
-        ))}
-      </div>
-
-      {/* WORKSPACE + HEADER */}
-      <div className="flex-1 flex flex-col">
-        <div className="px-4 py-3 flex justify-between items-center border-b" style={{ background: theme.header, borderColor: theme.border, color: theme.text }}>
-          <div className="flex items-center gap-3">
-            <div className="px-4 py-2 rounded-full font-semibold" style={{ background: theme.primary, color: "#fff" }}>
-              Área de Programação
-            </div>
-            <span style={{ color: theme.muted }}>arraste e conecte os blocos</span>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setToolboxVisible(!toolboxVisible)}
-              className="px-3 py-2 rounded-lg font-semibold transition"
-              style={{ background: theme.primary, color: "#fff" }}
-            >
-              {toolboxVisible ? "📂 Ocultar Blocos" : "📁 Mostrar Blocos"}
-            </button>
-
-            <button
-              onClick={handleRun}
-              className="px-4 py-2 rounded-lg font-semibold"
-              style={{ background: theme.primary, color: "#fff" }}
-            >
-              {running ? "Executando..." : "▶ Testar solução"}
-            </button>
-          </div>
-        </div>
-
-        <div className="flex-1 relative">
-          {/* 🧩 CONTADOR DE BLOCOS (overlay igual editor principal) */}
+        <div className="flex items-center" style={{ gap: theme.spacing.md }}>
           <div
-            className="absolute top-3 right-3 px-3 py-1 rounded-lg text-xs font-bold z-50"
             style={{
-              background: theme.card,
-              color: theme.text,
-              border: `1px solid ${theme.border}`
+              padding: `${theme.spacing.sm} ${theme.spacing.lg}`,
+              borderRadius: "999px",
+              background: theme.primary,
+              color: "#fff",
+              ...theme.typography.h3
             }}
           >
-            🧩 {blockCountLocal} blocos
+            Área de Programação
           </div>
 
-          <div ref={blocklyDiv} className="h-full w-full" />
+          <span
+            style={{
+              color: theme.muted,
+              ...theme.typography.small
+            }}
+          >
+            arraste e conecte os blocos
+          </span>
+        </div>
+
+        <div className="flex items-center" style={{ gap: theme.spacing.sm }}>
+          <button
+            onClick={() => setToolboxVisible(!toolboxVisible)}
+            style={{
+              padding: `${theme.spacing.sm} ${theme.spacing.md}`,
+              borderRadius: "8px",
+              background: theme.primary,
+              color: "#fff",
+              fontWeight: 600,
+              cursor: "pointer"
+            }}
+          >
+            {toolboxVisible ? "📂 Ocultar Blocos" : "📁 Mostrar Blocos"}
+          </button>
+
+          <button
+            onClick={handleRun}
+            style={{
+              padding: `${theme.spacing.sm} ${theme.spacing.lg}`,
+              borderRadius: "8px",
+              background: theme.primary,
+              color: "#fff",
+              fontWeight: 600,
+              cursor: "pointer"
+            }}
+          >
+            {running ? "Executando..." : "▶ Testar solução"}
+          </button>
         </div>
       </div>
+
+      {/* WORKSPACE */}
+      <div className="flex-1 relative">
+        
+        {/* CONTADOR DE BLOCOS */}
+        <div
+          style={{
+            position: "absolute",
+            top: theme.spacing.sm,
+            right: theme.spacing.sm,
+            padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
+            borderRadius: "8px",
+            background: theme.card,
+            color: theme.text,
+            border: `1px solid ${theme.border}`,
+            zIndex: 50,
+            ...theme.typography.small
+          }}
+        >
+          🧩 {blockCountLocal} blocos
+        </div>
+
+        <div ref={blocklyDiv} className="h-full w-full" />
+      </div>
     </div>
-  );
+  </div>
+);
 }

@@ -24,6 +24,7 @@ export function ChallengeIntro({ challenge, onStart }) {
 
     try {
       const id = challenge._id || challenge.publicId;
+
       const res = await fetch(`${domainUrl}/challenges/${id}/attempt`, {
         method: "POST",
         headers: {
@@ -39,7 +40,6 @@ export function ChallengeIntro({ challenge, onStart }) {
       }
 
       const data = await res.json();
-      // data.userAttempt pode ser null se usuário não autenticado
       onStart(data?.userAttempt ?? null);
     } catch (err) {
       console.warn("Erro ao registrar attempt:", err);
@@ -48,46 +48,110 @@ export function ChallengeIntro({ challenge, onStart }) {
   }
 
   return (
-    <div className="h-full p-4" style={{ background: theme.background, color: theme.text }}>
-      {/* HEADER — igual ao ChallengePage */}
-      <div className="mb-6">
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2 px-3 py-2 rounded-lg transition text-sm"
-          style={{ background: theme.card, color: theme.text }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = theme.hover)}
-          onMouseLeave={(e) => (e.currentTarget.style.background = theme.card)}
+    <div
+      className="h-full flex flex-col"
+      style={{
+        background: theme.background,
+        color: theme.text,
+        padding: theme.spacing.lg
+      }}
+    >
+      {/* 🔥 HEADER PADRÃO */}
+      <div style={{ marginBottom: theme.spacing.lg }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: theme.spacing.md,
+            marginBottom: theme.spacing.sm
+          }}
         >
-          ← Voltar
-        </button>
+          <button
+            onClick={() => navigate(-1)}
+            style={{
+              background: theme.card,
+              color: theme.text,
+              padding: `${theme.spacing.sm} ${theme.spacing.md}`,
+              borderRadius: "8px",
+              border: `1px solid ${theme.border}`,
+              cursor: "pointer",
+              ...theme.typography.small
+            }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.background = theme.hover)
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.background = theme.card)
+            }
+          >
+            ← Voltar
+          </button>
+        </div>
 
-        {/* Use theme.primary como no ChallengePage para manter destaque em dark/light */}
-        <h2 className="text-2xl font-bold" style={{ color: theme.primary }}>
+        <h2
+          style={{
+            ...theme.typography.title,
+            color: theme.primary
+          }}
+        >
           Desafios
         </h2>
-        <p style={{ color: theme.muted }}>Resolva problemas e evolua suas habilidades</p>
+
+        <p
+          style={{
+            ...theme.typography.text,
+            color: theme.muted
+          }}
+        >
+          Resolva problemas e evolua suas habilidades
+        </p>
       </div>
 
-      {/* Card centralizado com conteúdo do intro (mesma largura que antes) */}
+      {/* 🔥 CONTAINER FULL WIDTH */}
       <div
-        className="w-full max-w-4xl h-full max-h-[500px] rounded-2xl shadow-xl flex flex-col overflow-hidden mx-auto"
-        style={{ background: theme.panel, color: theme.text, border: `1px solid ${theme.border}` }}
+        className="w-full flex-1 flex flex-col overflow-hidden"
+        style={{
+          background: theme.panel,
+          border: `1px solid ${theme.border}`,
+          borderRadius: "12px"
+        }}
       >
-        <div className="px-5 py-3 text-lg font-bold shrink-0" style={{ background: theme.primary, color: "#fff" }}>
+        {/* 🔥 TITLE */}
+        <div
+          style={{
+            background: theme.primary,
+            color: "#fff",
+            padding: theme.spacing.lg,
+            ...theme.typography.title
+          }}
+        >
           {challenge.title || "Desafio"}
         </div>
 
-        <div className="flex border-b shrink-0" style={{ borderColor: theme.border }}>
+        {/* 🔥 TABS */}
+        <div
+          style={{
+            display: "flex",
+            borderBottom: `1px solid ${theme.border}`
+          }}
+        >
           {["descricao", "entrada", "regras"].map((t) => {
             const active = tab === t;
+
             return (
               <button
                 key={t}
                 onClick={() => setTab(t)}
-                className="flex-1 py-2 text-sm font-semibold transition"
                 style={{
+                  flex: 1,
+                  padding: theme.spacing.sm,
+                  cursor: "pointer",
+                  borderBottom: active
+                    ? `2px solid ${theme.primary}`
+                    : "2px solid transparent",
                   color: active ? theme.primary : theme.muted,
-                  borderBottom: active ? `2px solid ${theme.primary}` : "2px solid transparent"
+                  background: "transparent",
+                  ...theme.typography.text
                 }}
               >
                 {t}
@@ -96,63 +160,138 @@ export function ChallengeIntro({ challenge, onStart }) {
           })}
         </div>
 
-        <div className="flex-1 p-4 text-sm overflow-hidden" style={{ color: theme.text }}>
+        {/* 🔥 CONTENT */}
+        <div
+          style={{
+            padding: theme.spacing.lg,
+            flex: 1,
+            overflowY: "auto",
+            ...theme.typography.text
+          }}
+        >
           {tab === "descricao" && (
-            <div className="leading-relaxed">
+            <div>
               <p>{challenge.description || "Sem descrição disponível."}</p>
-              <p className="mt-2 text-xs" style={{ color: theme.muted }}>
-                OBS: Ao começar o desafio é contabilizado 1 (uma) tentativa.
+
+              <p
+                style={{
+                  marginTop: theme.spacing.sm,
+                  color: theme.muted,
+                  ...theme.typography.small
+                }}
+              >
+                OBS: Ao começar o desafio é contabilizado 1 tentativa.
               </p>
             </div>
           )}
 
           {tab === "entrada" && (
-            <div className="space-y-3">
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: theme.spacing.md
+              }}
+            >
               {test ? (
                 <>
                   <div>
-                    <span className="font-semibold">Entrada:</span>
-                    <div className="mt-1 p-2 rounded text-xs break-words" style={{ background: theme.primary, color: "#fff" }}>
+                    <span style={{ fontWeight: 600 }}>Entrada:</span>
+                    <div
+                      style={{
+                        marginTop: theme.spacing.xs,
+                        padding: theme.spacing.sm,
+                        borderRadius: "6px",
+                        background: theme.primary,
+                        color: "#fff",
+                        ...theme.typography.small
+                      }}
+                    >
                       {JSON.stringify(test.input)}
                     </div>
                   </div>
 
                   <div>
-                    <span className="font-semibold">Saída:</span>
-                    <div className="mt-1 p-2 rounded text-xs break-words" style={{ background: theme.warning, color: "#000" }}>
+                    <span style={{ fontWeight: 600 }}>Saída:</span>
+                    <div
+                      style={{
+                        marginTop: theme.spacing.xs,
+                        padding: theme.spacing.sm,
+                        borderRadius: "6px",
+                        background: theme.warning,
+                        color: "#000",
+                        ...theme.typography.small
+                      }}
+                    >
                       {JSON.stringify(test.expectedOutput)}
                     </div>
                   </div>
                 </>
               ) : (
-                <p style={{ color: theme.muted }}>Nenhum exemplo disponível.</p>
+                <p style={{ color: theme.muted }}>
+                  Nenhum exemplo disponível.
+                </p>
               )}
             </div>
           )}
 
           {tab === "regras" && (
-            <ul className="space-y-2 text-xs">
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: theme.spacing.sm
+              }}
+            >
               {(challenge.rules || []).length > 0 ? (
                 challenge.rules.map((r, i) => (
-                  <li key={i} className="flex gap-2 items-start">
+                  <div
+                    key={i}
+                    style={{
+                      display: "flex",
+                      gap: theme.spacing.sm,
+                      alignItems: "flex-start",
+                      ...theme.typography.small
+                    }}
+                  >
                     <span style={{ color: theme.success }}>✔</span>
                     <span>{r.description}</span>
-                  </li>
+                  </div>
                 ))
               ) : (
-                <p style={{ color: theme.muted }}>Nenhuma regra definida.</p>
+                <p style={{ color: theme.muted }}>
+                  Nenhuma regra definida.
+                </p>
               )}
-            </ul>
+            </div>
           )}
         </div>
 
-        <div className="p-3 border-t flex justify-center shrink-0" style={{ borderColor: theme.border }}>
+        {/* 🔥 FOOTER */}
+        <div
+          style={{
+            borderTop: `1px solid ${theme.border}`,
+            padding: theme.spacing.lg,
+            display: "flex",
+            justifyContent: "center"
+          }}
+        >
           <button
             onClick={handleStart}
-            className="px-5 py-2 rounded-lg font-semibold transition"
-            style={{ background: theme.primary, color: "#fff" }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = theme.hover)}
-            onMouseLeave={(e) => (e.currentTarget.style.background = theme.primary)}
+            style={{
+              background: theme.primary,
+              color: "#fff",
+              padding: `${theme.spacing.sm} ${theme.spacing.lg}`,
+              borderRadius: "8px",
+              cursor: "pointer",
+              ...theme.typography.text
+            }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.background = theme.hover)
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.background = theme.primary)
+            }
           >
             Começar desafio
           </button>

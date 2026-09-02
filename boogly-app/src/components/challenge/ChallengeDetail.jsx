@@ -10,7 +10,7 @@ import { ChallengeIntro } from "../challenge/ChallengeIntro";
 import ChallengeBlocklyEditor from "../challenge/ChallengeBlocklyEditor";
 import ChallengeResult from "../challenge/ChallengeResult";
 
-import { challengeToolbox } from "../../blockly/index"; // mapeamento toolbox: { list, queue, stack }
+import { challengeToolbox } from "../../blockly/index";
 
 export default function ChallengeDetail() {
   const { id } = useParams();
@@ -22,7 +22,6 @@ export default function ChallengeDetail() {
   const [challenge, setChallenge] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // UI / flow state
   const [started, setStarted] = useState(false);
   const [userAttempt, setUserAttempt] = useState(null);
 
@@ -38,9 +37,9 @@ export default function ChallengeDetail() {
 
         const res = await fetch(`${domainUrl}/challenges/${id}`, { headers });
         if (!res.ok) throw new Error("Erro ao carregar desafio");
+
         const data = await res.json();
 
-        // Normalize some fields for UI convenience
         const normalized = {
           ...data,
           structure: data.structure || "list",
@@ -61,6 +60,7 @@ export default function ChallengeDetail() {
   async function handleStart(userAttemptResult) {
     setStarted(true);
     setUserAttempt(userAttemptResult);
+
     if (userAttemptResult) {
       setChallenge((prev) =>
         prev
@@ -72,7 +72,6 @@ export default function ChallengeDetail() {
           : prev
       );
     } else {
-      // fallback mínimo (caso backend não retorne)
       setChallenge((prev) =>
         prev
           ? {
@@ -84,7 +83,6 @@ export default function ChallengeDetail() {
     }
   }
 
-  // Submeter solução: envia comandos extraídos do Blockly para backend
   async function handleRun(commands) {
     try {
       setRunning(true);
@@ -99,23 +97,20 @@ export default function ChallengeDetail() {
       });
 
       if (!res.ok) {
-        // backend pode retornar 400/500 com JSON descrevendo erro
         const errBody = await res.json().catch(() => null);
-        throw new Error(errBody?.message || `Erro ao submeter: ${res.status}`);
+        throw new Error(errBody?.message || `Erro ao submeter`);
       }
 
       const data = await res.json();
 
-      // data esperado: { success, message, output, expected, steps, userAttempt? }
       setResult({
         success: !!data.success,
         message: data.message || (data.success ? "Correto 🎉" : "Incorreto"),
-        output: data.output ?? data.outputState ?? data.outputState ?? [],
-        expected: data.expected ?? data.expectedOutput ?? null,
+        output: data.output ?? [],
+        expected: data.expected ?? null,
         steps: data.steps || []
       });
 
-      // Atualiza status local do desafio conforme userAttempt retornado
       if (data.userAttempt) {
         setUserAttempt(data.userAttempt);
 
@@ -128,107 +123,159 @@ export default function ChallengeDetail() {
               }
             : prev
         );
-      } 
+      }
     } catch (err) {
-      console.error("Erro ao submeter:", err);
-      showError({ message: err.message || "Erro ao submeter solução" });
+      showError({ message: err.message });
     } finally {
       setRunning(false);
     }
   }
 
-  if (loading) return <div className="p-6">Carregando...</div>;
-  if (!challenge) return <div className="p-6">Desafio não encontrado</div>;
+  if (loading)
+    return (
+      <div style={{ padding: theme.spacing.lg, ...theme.typography.text }}>
+        Carregando...
+      </div>
+    );
 
-  // pick toolbox for the challenge structure (fallback to list)
-  const chosenToolbox = (challengeToolbox && challengeToolbox[challenge.structure]) || challengeToolbox?.list;
+  if (!challenge)
+    return (
+      <div style={{ padding: theme.spacing.lg, ...theme.typography.text }}>
+        Desafio não encontrado
+      </div>
+    );
 
-  // --- RENDER ---
+  const chosenToolbox =
+    (challengeToolbox && challengeToolbox[challenge.structure]) ||
+    challengeToolbox?.list;
+
   return (
-    <div className="h-full p-4" style={{ background: theme.background, color: theme.text }}>
-      {/* Se ainda não iniciou o desafio, mostramos o ChallengeIntro modal-like.
-          Ao clicar em "Começar desafio" o handleStart() é chamado (que já
-          faz o POST /attempt via ChallengeIntro) e depois mostra o editor. */}
+    <div
+      className="h-full flex flex-col"
+      style={{
+        background: theme.background,
+        color: theme.text,
+        padding: theme.spacing.lg
+      }}
+    >
       {!started ? (
-        <div className="h-full max-w-6xl mx-auto">
-          <ChallengeIntro challenge={challenge} onStart={handleStart} />
-        </div>
+        <ChallengeIntro challenge={challenge} onStart={handleStart} />
       ) : (
-        // layout dividido: instruções (esquerda fixa) + editor (direita flex)
         <div className="h-full flex gap-4 min-h-0">
-          {/* LEFT: INSTRUÇÕES / INFORMAÇÕES */}
+          
+          {/* 🔥 LEFT */}
           <aside
-            className="w-96 flex flex-col rounded-xl p-4 overflow-auto"
+            className="w-96 flex flex-col overflow-auto"
             style={{
               background: theme.panel,
-              border: `1px solid ${theme.border}`
+              border: `1px solid ${theme.border}`,
+              borderRadius: "12px",
+              padding: theme.spacing.md
             }}
           >
-            <div className="mb-3">
-              <h2 className="text-lg font-bold" style={{ color: theme.primary }}>
-                {challenge.title}
-              </h2>
-            </div>
-            {/* TABS: DESCRIÇÃO / ENTRADA / REGRAS */}
-            <div className="mb-3 flex flex-col gap-2">
-              <div className="text-xs font-semibold" style={{ color: theme.muted }}>
+            <h2
+              style={{
+                ...theme.typography.title,
+                color: theme.primary,
+                marginBottom: theme.spacing.sm
+              }}
+            >
+              {challenge.title}
+            </h2>
+
+            {/* DESCRIÇÃO */}
+            <div style={{ marginBottom: theme.spacing.md }}>
+              <div style={{ ...theme.typography.small, color: theme.muted }}>
                 Instruções
               </div>
 
-              <div className="text-sm leading-relaxed p-2 rounded" style={{ background: theme.workspace }}>
-                <div dangerouslySetInnerHTML={{ __html: challenge.description || "<em>Sem descrição</em>" }} />
+              <div
+                style={{
+                  marginTop: theme.spacing.xs,
+                  padding: theme.spacing.sm,
+                  borderRadius: "8px",
+                  background: theme.workspace,
+                  ...theme.typography.text
+                }}
+              >
+                <div
+                  dangerouslySetInnerHTML={{
+                    __html: challenge.description || "<em>Sem descrição</em>"
+                  }}
+                />
               </div>
             </div>
 
-            {/* Example test case (primeiro) */}
-            {Array.isArray(challenge.testCases) && challenge.testCases.length > 0 && (
-              <div className="mt-2">
-                <div className="text-xs font-semibold mb-1" style={{ color: theme.muted }}>
-                  Exemplo de entrada / saída
+            {/* TEST CASE */}
+            {challenge.testCases?.length > 0 && (
+              <div style={{ marginBottom: theme.spacing.md }}>
+                <div style={{ ...theme.typography.small, color: theme.muted }}>
+                  Exemplo
                 </div>
 
-                <div className="mb-2 text-xs">
-                  <div className="mb-1">
-                    <strong>Entrada:</strong>
-                    <div className="mt-1 p-2 rounded text-xs break-words" style={{ background: theme.card, color: theme.text }}>
-                      {JSON.stringify(challenge.testCases[0].input)}
-                    </div>
+                <div style={{ marginTop: theme.spacing.sm }}>
+                  <strong>Entrada:</strong>
+                  <div
+                    style={{
+                      marginTop: theme.spacing.xs,
+                      padding: theme.spacing.sm,
+                      borderRadius: "6px",
+                      background: theme.card,
+                      ...theme.typography.small
+                    }}
+                  >
+                    {JSON.stringify(challenge.testCases[0].input)}
                   </div>
 
-                  <div>
-                    <strong>Saída esperada:</strong>
-                    <div className="mt-1 p-2 rounded text-xs break-words" style={{ background: theme.card, color: theme.text }}>
-                      {JSON.stringify(challenge.testCases[0].expectedOutput)}
-                    </div>
+                  <strong>Saída:</strong>
+                  <div
+                    style={{
+                      marginTop: theme.spacing.xs,
+                      padding: theme.spacing.sm,
+                      borderRadius: "6px",
+                      background: theme.card,
+                      ...theme.typography.small
+                    }}
+                  >
+                    {JSON.stringify(challenge.testCases[0].expectedOutput)}
                   </div>
                 </div>
               </div>
             )}
 
             {/* REGRAS */}
-            <div className="mt-auto">
-              <div className="text-xs font-semibold mb-2" style={{ color: theme.muted }}>
+            <div style={{ marginTop: "auto" }}>
+              <div style={{ ...theme.typography.small, color: theme.muted }}>
                 Regras
               </div>
 
-              <ul className="text-xs space-y-2">
-                {(challenge.rules || []).length > 0 ? (
-                  challenge.rules.map((r, i) => (
-                    <li key={i} className="flex gap-2 items-start">
-                      <span style={{ color: theme.success }}>✔</span>
-                      <span>{r.description}</span>
-                    </li>
-                  ))
-                ) : (
-                  <li style={{ color: theme.muted }}>Nenhuma regra definida.</li>
-                )}
-              </ul>
+              <div style={{ marginTop: theme.spacing.sm }}>
+                {(challenge.rules || []).map((r, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      display: "flex",
+                      gap: theme.spacing.sm,
+                      ...theme.typography.small
+                    }}
+                  >
+                    <span style={{ color: theme.success }}>✔</span>
+                    <span>{r.description}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </aside>
 
-          {/* RIGHT: EDITOR (flex) */}
+          {/* 🔥 RIGHT */}
           <main className="flex-1 flex flex-col min-h-0">
-            <div className="flex-1 min-h-0 rounded-xl overflow-hidden" style={{ background: theme.workspace }}>
+            <div
+              className="flex-1 min-h-0 overflow-hidden"
+              style={{
+                background: theme.workspace,
+                borderRadius: "12px"
+              }}
+            >
               <ChallengeBlocklyEditor
                 toolbox={chosenToolbox}
                 structure={challenge.structure}
@@ -237,12 +284,13 @@ export default function ChallengeDetail() {
               />
             </div>
 
-            {/* Resultado modal (overlay) */}
-            <ChallengeResult result={result} onClose={() => setResult(null)} />
+            <ChallengeResult
+              result={result}
+              onClose={() => setResult(null)}
+            />
           </main>
         </div>
       )}
-
     </div>
   );
 }

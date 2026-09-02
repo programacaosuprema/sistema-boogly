@@ -1,8 +1,9 @@
 // src/components/onboarding/OnboardingFlow.jsx
-import { useState, useEffect, useCallback, useContext } from "react";
-import { homeTheme } from "../../theme/HomeTheme";
+import React, { useState, useEffect, useCallback, useContext, useRef } from "react";
 import { AppContext } from "../../app_configuration/AppContext";
 import { useAuth } from "../../autenticator/useAuth";
+import { useTheme } from "../../theme/useTheme";
+import { motion, AnimatePresence } from "framer-motion";
 
 const steps = [
   { title: "Bem-vindo 👋", description: "Você vai aprender estruturas de dados de forma visual." },
@@ -13,24 +14,54 @@ const steps = [
 
 export default function OnboardingFlow({ onFinish }) {
   const [step, setStep] = useState(0);
-  const [dontShow, setDontShow] = useState(false);
+  const [dontShow, setDontShow] = useState(() => {
+    // inicializa do localStorage / sessionStorage (prioriza localStorage)
+    try {
+      const ls = localStorage.getItem("onboarding_done");
+      if (ls === "true") return true;
+      const ss = sessionStorage.getItem("onboarding_done");
+      return ss === "true";
+    } catch (e) {
+      return false;
+    }
+  });
 
   const { domainUrl } = useContext(AppContext);
-  const { token, user, refreshUser } = useAuth(); // pega refreshUser
+  const { token, user, refreshUser } = useAuth();
+  const { theme } = useTheme();
+  const nextButtonRef = useRef(null);
 
   const current = steps[step];
 
   useEffect(() => {
+    // trava scroll da página enquanto o modal estiver aberto
+    const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = "auto"; };
+    return () => {
+      document.body.style.overflow = prev || "auto";
+    };
   }, []);
+
+  useEffect(() => {
+    // foca o botão próximo para navegação por teclado
+    if (nextButtonRef.current) nextButtonRef.current.focus();
+  }, [step]);
 
   const finish = useCallback(async () => {
     try {
-      // GUEST: usa sessionStorage (isolado por navegador)
-      if (user?.guest) {
-        if (dontShow) sessionStorage.setItem("onboarding_done", "true");
-        else sessionStorage.removeItem("onboarding_done");
+      // GUEST: grava em sessionStorage (com opção de localStorage se o usuário optar)
+      try {
+        if (dontShow) {
+          // persiste em sessionStorage para guests por compatibilidade
+          sessionStorage.setItem("onboarding_done", "true");
+          // grava também em localStorage para persistir mais tempo (opcional)
+          localStorage.setItem("onboarding_done", "true");
+        } else {
+          sessionStorage.removeItem("onboarding_done");
+          localStorage.removeItem("onboarding_done");
+        }
+      } catch (e) {
+        console.warn("Storage write failed:", e);
       }
 
       // USUÁRIO LOGADO (salva no backend)
@@ -43,16 +74,24 @@ export default function OnboardingFlow({ onFinish }) {
           },
           body: JSON.stringify({ onboardingDone: !!dontShow })
         });
-        console.log(res);
-        // após salvar no backend, atualiza o user no contexto
-        await refreshUser();
+
+        if (!res.ok) {
+          console.warn("Onboarding save returned non-ok:", res.status);
+        }
+
+        // atualiza user no contexto (se disponível)
+        try {
+          await refreshUser();
+        } catch (err) {
+          console.warn("Falha ao atualizar user após onboarding:", err);
+        }
       }
 
       onFinish?.();
     } catch (err) {
       console.error("Erro onboarding:", err);
-      // em erro, tentar ainda atualizar e fechar
-      try { await refreshUser(); } catch(e) {console.log(e);}
+      // tenta atualizar o user de qualquer forma e fecha
+      try { await refreshUser(); } catch(e) { /* noop */ }
       onFinish?.();
     }
   }, [dontShow, token, user, domainUrl, onFinish, refreshUser]);
@@ -66,36 +105,145 @@ export default function OnboardingFlow({ onFinish }) {
     finish();
   }
 
+  // hover states apenas para micro-interações
+  const [hoverPrev, setHoverPrev] = useState(false);
+  const [hoverNext, setHoverNext] = useState(false);
+
+  // animação dos cards
+  const variants = {
+    enter: { opacity: 0, y: 10 },
+    center: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: -10 }
+  };
+
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50 backdrop-blur-sm"
-      style={{ background: "rgba(0,0,0,0.7)" }}
+    <div
+      className="fixed inset-0 flex items-center justify-center z-50"
+      aria-modal="true"
+      role="dialog"
+      aria-labelledby="onboarding-title"
+      style={{
+        background: "rgba(0,0,0,0.7)",
+        padding: theme?.spacing?.lg || "24px"
+      }}
     >
-      <div className="w-full max-w-lg p-6 rounded-3xl shadow-2xl text-center"
-        style={{ background: homeTheme.background, color: homeTheme.text }}
+      <div
+        className="w-full max-w-lg rounded-3xl shadow-2xl text-center"
+        style={{
+          background: theme?.panel,
+          color: theme?.text,
+          padding: theme?.spacing?.lg || "24px",
+          boxSizing: "border-box",
+          border: `1px solid ${theme?.border}`,
+          borderRadius: 24
+        }}
       >
-        <div className="flex justify-center gap-2 mb-6">
+        {/* PROGRESS DOTS */}
+        <div className="flex justify-center gap-2 mb-6" aria-hidden>
           {steps.map((_, i) => (
-            <div key={i}
+            <div
+              key={i}
+              role="button"
+              tabIndex={-1}
+              aria-current={i === step ? "step" : undefined}
               className="w-3 h-3 rounded-full transition"
-              style={{ background: i === step ? homeTheme.primary : "rgba(255,255,255,0.2)" }}
+              style={{
+                width: 10,
+                height: 10,
+                background: i === step ? theme?.primary : theme?.card,
+                opacity: i === step ? 1 : 0.45,
+                border: `1px solid ${theme?.border}`,
+                boxSizing: "border-box"
+              }}
             />
           ))}
         </div>
 
-        <h2 className="text-2xl font-bold mb-3">{current.title}</h2>
-        <p className="mb-4 opacity-80">{current.description}</p>
+        {/* CONTENT (animated) */}
+        <div style={{ minHeight: 120 }}>
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={step}
+              variants={variants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ duration: 0.28 }}
+            >
+              <h2
+                id="onboarding-title"
+                className="text-2xl font-bold mb-3"
+                style={{
+                  margin: 0,
+                  ...theme?.typography?.h2,
+                  color: theme?.text
+                }}
+              >
+                {current.title}
+              </h2>
 
-        <label className="flex items-center justify-center gap-2 mb-6 text-sm">
-          <input type="checkbox" checked={dontShow} onChange={(e) => setDontShow(e.target.checked)} />
+              <p
+                className="mb-4"
+                style={{
+                  margin: 0,
+                  color: theme?.muted,
+                  ...theme?.typography?.body
+                }}
+              >
+                {current.description}
+              </p>
+            </motion.div>
+          </AnimatePresence>
+        </div>
+
+        {/* CHECKBOX */}
+        <label
+          className="flex items-center justify-center gap-2 mb-6 text-sm"
+          style={{ color: theme?.muted, ...theme?.typography?.small }}
+        >
+          <input
+            type="checkbox"
+            checked={dontShow}
+            onChange={(e) => setDontShow(e.target.checked)}
+            aria-checked={dontShow}
+          />
           Não mostrar novamente
         </label>
 
-        <div className="flex justify-between">
-          <button onClick={skip} className="underline text-sm opacity-70">pular</button>
+        {/* ACTIONS */}
+        <div className="flex justify-between items-center" style={{ gap: theme?.spacing?.md }}>
+          <button
+            onClick={skip}
+            onMouseEnter={() => setHoverPrev(true)}
+            onMouseLeave={() => setHoverPrev(false)}
+            className="underline text-sm"
+            style={{
+              background: "transparent",
+              border: "none",
+              padding: theme?.spacing?.sm,
+              color: hoverPrev ? theme?.text : theme?.muted,
+              cursor: "pointer"
+            }}
+            aria-label="Pular onboarding"
+          >
+            pular
+          </button>
 
-          <button onClick={next}
+          <button
+            ref={nextButtonRef}
+            onClick={next}
+            onMouseEnter={() => setHoverNext(true)}
+            onMouseLeave={() => setHoverNext(false)}
             className="px-6 py-2 rounded-lg font-semibold"
-            style={{ background: homeTheme.primary, color: "#fff" }}
+            style={{
+              background: hoverNext ? theme?.hover : theme?.primary,
+              color: "#fff",
+              border: "none",
+              cursor: "pointer",
+              paddingLeft: theme?.spacing?.lg,
+              paddingRight: theme?.spacing?.lg
+            }}
+            aria-label={step === steps.length - 1 ? "Começar" : "Próximo"}
           >
             {step === steps.length - 1 ? "Começar" : "Próximo"}
           </button>

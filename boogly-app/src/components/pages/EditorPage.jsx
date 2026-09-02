@@ -46,19 +46,19 @@ export default function EditorPage() {
   const simulators = {
     stack: StackVisualizer,
     queue: QueueVisualizer,
-    list: ListVisualizer,
+    list: ListVisualizer
   };
 
   const engines = {
     stack: runStack,
     queue: runQueue,
-    list: runList,
+    list: runList
   };
 
   const toolboxes = {
     stack: stackToolbox,
     queue: queueToolbox,
-    list: toolboxCategories,
+    list: toolboxCategories
   };
 
   const currentToolbox = toolboxes[structure];
@@ -66,6 +66,10 @@ export default function EditorPage() {
   const SimulatorComponent = simulators[structure];
 
   const [blockCount, setBlockCount] = useState(0);
+
+  // Refs para controlar scroll/overflow do wrapper da simulação
+  const outerSimWrapperRef = useRef(null); // wrapper pai do visualizador
+  const innerScrollWrapperRef = useRef(null); // wrapper que contém overflow da visualização
 
   // 🔥 EXECUÇÃO AUTOMÁTICA
   useEffect(() => {
@@ -92,7 +96,7 @@ export default function EditorPage() {
     return () => clearTimeout(interval);
   }, [isRunning, currentStep, steps, speed]);
 
-  // 🔥 AUTO SCROLL
+  // 🔥 AUTO SCROLL do histórico (mantive)
   useEffect(() => {
     if (!historyRef.current) return;
 
@@ -102,7 +106,7 @@ export default function EditorPage() {
     if (activeItem) {
       activeItem.scrollIntoView({
         behavior: "smooth",
-        block: "center",
+        block: "center"
       });
     }
   }, [currentStep]);
@@ -125,7 +129,6 @@ export default function EditorPage() {
       setCurrentStep(0);
       setIsRunning(true);
       setIsPaused(false);
-
     } catch (err) {
       console.error(err);
 
@@ -162,8 +165,7 @@ export default function EditorPage() {
   const safeStep = steps[currentStep] || {};
   const safeData = safeStep.state || {};
 
-  const hasInvalidState =
-    steps.length > 0 && !steps[currentStep];
+  const hasInvalidState = steps.length > 0 && !steps[currentStep];
 
   if (hasInvalidState) {
     return (
@@ -176,15 +178,66 @@ export default function EditorPage() {
     );
   }
 
+  // -----------------------------------------------------------------------
+  // Lógica para título centralizado (exibe apenas uma vez - primeiro nome)
+  // -----------------------------------------------------------------------
+  const firstListName = (() => {
+    try {
+      const names = Object.keys(safeData || {}).filter((n) => n !== "variables");
+      return names.length ? names[0] : null;
+    } catch (e) {
+      return null;
+    }
+  })();
+
+  // Detecta eixo correto para scroll reset / foco
+  const isHorizontalStructure = structure === "list" || structure === "queue";
+  const isStackStructure = structure === "stack";
+
+  // Reset robusto de scroll no eixo apropriado quando safeData muda
+  // (não sobrescrever o foco do simulador quando estivermos em traverse)
+  useEffect(() => {
+    if (safeStep && safeStep.type === "traverse") return;
+
+    const outer = outerSimWrapperRef.current;
+    const inner = innerScrollWrapperRef.current;
+    if (!outer && !inner) return;
+
+    const attempts = [0, 30, 120, 300];
+    attempts.forEach((delay) => {
+      setTimeout(() => {
+        try {
+          if (isHorizontalStructure) {
+            if (outer) outer.scrollLeft = 0;
+            if (inner) inner.scrollLeft = 0;
+          } else if (isStackStructure) {
+            if (outer) outer.scrollTop = 0;
+            if (inner) inner.scrollTop = 0;
+          } else {
+            // fallback: reset ambos eixos
+            if (outer) {
+              outer.scrollLeft = 0;
+              outer.scrollTop = 0;
+            }
+            if (inner) {
+              inner.scrollLeft = 0;
+              inner.scrollTop = 0;
+            }
+          }
+        } catch (e) {
+          // ignore
+        }
+      }, delay);
+    });
+  }, [JSON.stringify(safeData), safeStep?.type, structure]);
+
   return (
     <div
       className="flex flex-col h-full gap-3"
       style={{ background: theme.background }}
     >
-
       {/* MAIN: duas colunas 50% / 50% */}
       <div className="flex flex-1 min-h-0 gap-3">
-
         {/* ESQUERDA — EDITOR (50%) */}
         <section
           className="w-1/2 min-h-0 rounded-xl overflow-hidden"
@@ -200,16 +253,12 @@ export default function EditorPage() {
         </section>
 
         {/* DIREITA — SIMULAÇÃO + HISTÓRICO + CÓDIGO (50%) */}
-        <section
-          className="w-1/2 min-h-0 flex flex-col gap-3"
-        >
-
+        <section className="w-1/2 min-h-0 flex flex-col gap-3">
           {/* SIMULAÇÃO (top) */}
           <div
             className="flex-[3] min-h-0 rounded-xl p-4 flex flex-col gap-3 overflow-hidden"
             style={{ background: theme.panel }}
           >
-
             {/* CONTROLES */}
             <div className="flex items-center gap-3 flex-wrap">
               <button
@@ -280,36 +329,98 @@ export default function EditorPage() {
                 boxSizing: "border-box"
               }}
             >
-              {/* Inner center wrapper — garante centralização e scroll se necessário */}
+              {/* Inner wrapper ajustado: mostra título centralizado UMA vez e mantém o simulador responsável pela rolagem */}
               <div
-                className="flex-1"
                 style={{
                   display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
+                  flexDirection: "column",
                   width: "100%",
                   height: "100%",
-                  overflow: "auto", // se o visualizador gerar muitos nós, aparece scrollbar aqui
-                  padding: 8,
-                  boxSizing: "border-box"
+                  alignItems: "stretch",
+                  justifyContent: "flex-start",
+                  overflow: "hidden",
+                  minWidth: 0
                 }}
               >
-                {/* Content container: limita dimensão máxima para evitar expandir além do espaço */}
+                {/* -------------------------
+                    Nome da primeira estrutura
+                    (aparece apenas uma vez, centralizado)
+                    ------------------------- */}
+                {firstListName && (
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "center",
+                      padding: theme.spacing.sm,
+                      paddingTop: theme.spacing.xs,
+                      paddingBottom: theme.spacing.xs,
+                      boxSizing: "border-box"
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "inline-block",
+                        padding: `6px ${theme.spacing.md}`,
+                        borderRadius: 8,
+                        background: theme.card,
+                        border: `1px solid ${theme.border}`
+                      }}
+                    >
+                      <h2
+                        style={{
+                          margin: 0,
+                          color: theme.text,
+                          ...theme.typography.h2,
+                          textTransform: "none"
+                        }}
+                      >
+                        {firstListName}
+                      </h2>
+                    </div>
+                  </div>
+                )}
+
+                {/* visualizador: wrapper adaptativo por estrutura */}
                 <div
+                  ref={outerSimWrapperRef}
                   style={{
-                    maxWidth: "100%",
-                    maxHeight: "100%",
                     width: "100%",
+                    height: "100%",
                     display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    overflow: "auto"
+                    alignItems: "stretch",
+                    justifyContent: "flex-start",
+                    overflow: "hidden",
+                    minWidth: 0
                   }}
                 >
-                  <SimulatorComponent
-                    data={safeData}
-                    step={safeStep}
-                  />
+                  <div
+                    ref={innerScrollWrapperRef}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      display: "flex",
+                      // para listas/filas, queremos a linha horizontal e alinhamento ao início
+                      justifyContent: isHorizontalStructure ? "flex-start" : "center",
+                      alignItems: isHorizontalStructure ? "center" : "flex-start",
+                      overflowX: isHorizontalStructure ? "auto" : "hidden",
+                      overflowY: isHorizontalStructure ? "hidden" : "auto",
+                      paddingLeft: theme.spacing.sm,
+                      paddingRight: theme.spacing.sm,
+                      boxSizing: "border-box",
+                      minWidth: 0
+                    }}
+                  >
+                    {/* Aqui o ajuste crítico: quando horizontal, o filho NÃO deve forçar width:100% */}
+                    <div
+                      style={{
+                        minWidth: isHorizontalStructure ? "max-content" : 0,
+                        width: isHorizontalStructure ? "auto" : "100%"
+                      }}
+                    >
+                      {/* Passa showTitle={false} para evitar duplicação */}
+                      <SimulatorComponent data={safeData} step={safeStep} showTitle={false} />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -337,7 +448,6 @@ export default function EditorPage() {
               )}
 
               {steps.slice(0, currentStep + 1).map((step, i) => {
-
                 const color =
                   step.type === "add"
                     ? theme.success
@@ -359,42 +469,29 @@ export default function EditorPage() {
                     key={i}
                     className="text-sm flex gap-2 items-center px-2 py-1 rounded"
                     style={{
-                      background:
-                        i === currentStep ? theme.hover : "transparent",
-                      borderLeft:
-                        i === currentStep
-                          ? `4px solid ${theme.primary}`
-                          : "none",
+                      background: i === currentStep ? theme.hover : "transparent",
+                      borderLeft: i === currentStep ? `4px solid ${theme.primary}` : "none",
                       opacity: i === currentStep ? 1 : 0.6
                     }}
                   >
-
                     <span style={{ color }} className="font-bold">
                       {symbol}
                     </span>
 
                     <span style={{ color: theme.text }}>
-                      {step.message} →{" "}
-                      {JSON.stringify(Object.values(step.state)[0] || [])}
+                      {step.message} → {JSON.stringify(Object.values(step.state)[0] || [])}
                     </span>
-
                   </div>
                 );
               })}
             </div>
-
           </div>
 
           {/* RODAPÉ — CÓDIGO (fixo) */}
-          <div
-            className="h-56 rounded-xl overflow-hidden"
-            style={{ background: theme.panel }}
-          >
+          <div className="h-56 rounded-xl overflow-hidden" style={{ background: theme.panel }}>
             <CodePanel cCode={cCode} />
           </div>
-
         </section>
-
       </div>
     </div>
   );

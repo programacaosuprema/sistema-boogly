@@ -1,17 +1,40 @@
 import { useTheme } from "../../theme/useTheme";
+import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 
 function formatValue(value) {
   if (value === null || value === undefined) return "nulo";
+
   if (typeof value === "string") return value;
+
+  // ✅ SE FOR ARRAY → UMA LINHA
+  if (Array.isArray(value)) {
+    return `[${value.join(", ")}]`;
+  }
+
+  // resto continua igual
   return JSON.stringify(value);
 }
 
 export default function ChallengeResult({ result, onClose }) {
   const { theme } = useTheme();
+  const navigate = useNavigate();
 
+  const isSuccess = result?.success;
+
+  // ✅ SEMPRE executa (mesmo se result for null)
+  useEffect(() => {
+    if (isSuccess) {
+      const timer = setTimeout(() => {
+        navigate("/desafios");
+      }, 1500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isSuccess, navigate]);
+
+  // ✅ AGORA pode fazer return
   if (!result) return null;
-
-  const isSuccess = result.success;
 
   return (
     <div
@@ -22,73 +45,97 @@ export default function ChallengeResult({ result, onClose }) {
       }}
     >
       <div
-        className="rounded-xl w-[520px] p-6 shadow-xl"
+        className="rounded-xl shadow-xl"
         style={{
+          width: "520px",
+          padding: theme.spacing.lg,
           background: theme.panel,
           color: theme.text,
           border: `1px solid ${theme.border}`
         }}
       >
         {/* HEADER */}
-        <div className="flex justify-between items-center mb-4">
+        <div
+          className="flex justify-between items-center"
+          style={{ marginBottom: theme.spacing.md }}
+        >
           <h2
-            className="text-lg font-bold"
-            style={{ color: theme.primary }}
-            >
+            style={{
+              ...theme.typography.h3,
+              color: theme.primary
+            }}
+          >
             Resultado da Execução
           </h2>
 
           <button
             onClick={onClose}
-            style={{ color: theme.text }}
+            style={{
+              color: theme.muted,
+              fontSize: "18px",
+              cursor: "pointer"
+            }}
           >
             ✖
           </button>
         </div>
 
         {/* STATUS */}
-        <div className="mb-4 flex items-center gap-2">
+        <div
+          className="flex items-center gap-2"
+          style={{ marginBottom: theme.spacing.md }}
+        >
 
-          <span style={{ color: theme.textSecondary }}>
+          <span style={{ color: theme.muted }}>
             {result.message}
           </span>
         </div>
 
         {/* RESULTADO FINAL */}
-        <div className="mb-4">
+        <div style={{ marginBottom: theme.spacing.md }}>
           <strong>Resultado final:</strong>
           <pre
-            className="p-2 rounded mt-1"
             style={{
+              marginTop: theme.spacing.xs,
+              padding: theme.spacing.sm,
+              borderRadius: "8px",
               background: theme.background,
-              border: `1px solid ${theme.border}`
+              border: `1px solid ${theme.border}`,
+              color: theme.text,
+              fontSize: theme.typography.small.fontSize
             }}
           >
-            {JSON.stringify(result.output ?? [])}
+            {formatValue(result.output ?? [])}
           </pre>
         </div>
 
         {/* ERRO */}
         {!isSuccess && (
-          <div className="mb-4">
+          <div style={{ marginBottom: theme.spacing.md }}>
             <div>
               <strong>Esperado:</strong>
               <pre
-                className="p-2 rounded mt-1"
                 style={{
-                  background: "rgba(34,197,94,0.1)"
+                  marginTop: theme.spacing.xs,
+                  padding: theme.spacing.sm,
+                  borderRadius: "8px",
+                  background: "rgba(34,197,94,0.1)",
+                  color: theme.text
                 }}
               >
                 {formatValue(result.expected)}
               </pre>
             </div>
 
-            <div className="mt-2">
+            <div style={{ marginTop: theme.spacing.sm }}>
               <strong>Seu resultado:</strong>
               <pre
-                className="p-2 rounded mt-1"
                 style={{
-                  background: "rgba(239,68,68,0.1)"
+                  marginTop: theme.spacing.xs,
+                  padding: theme.spacing.sm,
+                  borderRadius: "8px",
+                  background: "rgba(239,68,68,0.1)",
+                  color: theme.text
                 }}
               >
                 {formatValue(result.output)}

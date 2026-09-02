@@ -25,12 +25,50 @@ export const themes = {
 
     editor: "vs-light",
 
+    typography: {
+      h1: {
+        fontSize: "26px",
+        fontWeight: 700,
+        letterSpacing: "0.5px"
+      },
+      h2: {
+        fontSize: "22px",
+        fontWeight: 700
+      },
+      h3: {
+        fontSize: "18px",
+        fontWeight: 600
+      },
+      body: {
+        fontSize: "16px",
+        fontWeight: 400
+      },
+      small: {
+        fontSize: "14px",
+        fontWeight: 400
+      },
+      badge: {
+        fontSize: "12px",
+        fontWeight: 600
+      }
+    },
+
+    spacing: {
+      xs: "4px",
+      sm: "8px",
+      md: "12px",
+      lg: "16px",
+      xl: "24px"
+    },
+
     blocks: {
       logic: 60,
       structure: 210,
       value: 120,
       text: 290
-    }
+    },
+
+    logo: "/public/logo-light.png"
   },
 
   dark: {
@@ -59,12 +97,50 @@ export const themes = {
 
     editor: "vs-dark",
 
+    typography: {
+      h1: {
+        fontSize: "26px",
+        fontWeight: 700,
+        letterSpacing: "0.5px"
+      },
+      h2: {
+        fontSize: "22px",
+        fontWeight: 700
+      },
+      h3: {
+        fontSize: "18px",
+        fontWeight: 600
+      },
+      body: {
+        fontSize: "16px",
+        fontWeight: 400
+      },
+      small: {
+        fontSize: "14px",
+        fontWeight: 400
+      },
+      badge: {
+        fontSize: "12px",
+        fontWeight: 600
+      }
+    },
+
+    spacing: {
+      xs: "4px",
+      sm: "8px",
+      md: "12px",
+      lg: "16px",
+      xl: "24px"
+    },
+
     blocks: {
       logic: 50,
       structure: 220,
       value: 140,
       text: 300
-    }
+    },
+
+    logo: "/public/logo-dark.png"
   },
 
   colorful: {
@@ -93,11 +169,49 @@ export const themes = {
 
     editor: "hc-black",
 
+    typography: {
+      h1: {
+        fontSize: "26px",
+        fontWeight: 700,
+        letterSpacing: "0.5px"
+      },
+      h2: {
+        fontSize: "22px",
+        fontWeight: 700
+      },
+      h3: {
+        fontSize: "18px",
+        fontWeight: 600
+      },
+      body: {
+        fontSize: "16px",
+        fontWeight: 400
+      },
+      small: {
+        fontSize: "14px",
+        fontWeight: 400
+      },
+      badge: {
+        fontSize: "12px",
+        fontWeight: 600
+      }
+    },
+
+    spacing: {
+      xs: "4px",
+      sm: "8px",
+      md: "12px",
+      lg: "16px",
+      xl: "24px"
+    },
+    
     blocks: {
       logic: 30,
       structure: 200,
       value: 100,
       text: 320
-    }
+    },
+
+    logo: "/public/logo-colorful.png"
   }
 };

@@ -46,21 +46,34 @@ export default function Header({ structure }) {
         color: theme.text
       }}
     >
-
-      {/* 🔥 ESQUERDA */}
-      <div className="flex items-center gap-3">
-
-        <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-blue-500 rounded-md" />
-
-        <h1
-          className="text-lg font-semibold"
+      <div
+        className="flex items-center"
+        style={{ gap: theme.spacing.md }}
+      >
+        {/* LOGO NORMAL (SEM FUNDO / SEM BORDA) */}
+        <img
+          src={theme.logo}
+          alt="NóLab"
           style={{
-            color: themeName === "dark" ? "#3b82f6" : theme.primary
+            width: "42px",
+            height: "42px",
+            objectFit: "contain"
+          }}
+        />
+
+        {/* NOME GRANDE */}
+        <div
+          key={theme.name}
+          style={{
+            fontSize: "30px",
+            fontWeight: 800,
+            letterSpacing: "1px",
+            fontFamily: "Poppins, Inter, sans-serif",
+            color: theme.primary
           }}
         >
-          {(appName || "APP").toUpperCase()}
-        </h1>
-
+          {(appName || "Nó Lab").toUpperCase()}
+        </div>
       </div>
 
       {/* 🔥 DIREITA */}

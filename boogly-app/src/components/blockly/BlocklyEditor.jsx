@@ -329,7 +329,6 @@ export default function BlocklyEditor({
     }
   }, [structure]);
 
-  // ❌ FALLBACK UI
   if (initError) {
     return (
       <div
@@ -340,9 +339,15 @@ export default function BlocklyEditor({
         }}
       >
         <div className="text-center">
-          <h2 className="text-lg font-bold mb-2">
+          <h2
+            style={{
+              ...theme.typography.h3,
+              marginBottom: theme.spacing.sm
+            }}
+          >
             ⚠️ Erro ao carregar o editor
           </h2>
+
           <p style={{ color: theme.muted }}>
             Tente recarregar a página
           </p>
@@ -359,8 +364,11 @@ export default function BlocklyEditor({
       {/* SIDEBAR */}
       {hasCategories && (
         <div
-          className="w-14 border-r flex flex-col items-center gap-4 py-3"
+          className="border-r flex flex-col items-center"
           style={{
+            width: "60px",
+            padding: theme.spacing.sm,
+            gap: theme.spacing.sm,
             background: theme.toolbox,
             borderColor: theme.border
           }}
@@ -379,9 +387,11 @@ export default function BlocklyEditor({
 
       {/* WORKSPACE */}
       <div className="flex-1 flex flex-col">
+        {/* HEADER */}
         <div
-          className="px-4 py-3 flex justify-between items-center border-b"
+          className="flex justify-between items-center border-b"
           style={{
+            padding: theme.spacing.md,
             background: theme.header,
             borderColor: theme.border,
             color: theme.text
@@ -389,73 +399,97 @@ export default function BlocklyEditor({
         >
           <div className="flex items-center gap-3">
             <div
-              className="px-4 py-2 rounded-full font-semibold"
               style={{
+                padding: `${theme.spacing.xs} ${theme.spacing.md}`,
+                borderRadius: "999px",
+                fontWeight: 600,
                 background: theme.primary,
-                color: "#fff"
+                color: "#fff",
+                ...theme.typography.h3
               }}
             >
               Área de Programação
             </div>
 
-            <span style={{ color: theme.muted }}>
+            <span
+              style={{
+                color: theme.muted,
+                ...theme.typography.small
+              }}
+            >
               arraste e conecte os blocos
             </span>
           </div>
 
           {hasCategories && (
             <button
-              onClick={() =>
-                setToolboxVisible(!toolboxVisible)
-              }
-              className="px-3 py-2 rounded-lg font-semibold transition"
+              onClick={() => setToolboxVisible(!toolboxVisible)}
               style={{
+                padding: `${theme.spacing.sm} ${theme.spacing.md}`,
+                borderRadius: "8px",
+                fontWeight: 600,
                 background: theme.primary,
-                color: "#fff"
+                color: "#fff",
+                cursor: "pointer"
               }}
             >
               {toolboxVisible
-                ? "📂Ocultar Blocos"
-                : "📁Mostrar Blocos"}
+                ? "📂 Ocultar Blocos"
+                : "📁 Mostrar Blocos"}
             </button>
           )}
         </div>
 
+        {/* WORKSPACE AREA */}
         <div className="flex-1 relative">
-  {/* 💾 Status de salvamento */}
-  <div
-    className="absolute top-3 right-3 px-3 py-2 rounded-lg text-sm font-semibold shadow z-10"
-    style={{
-      background: theme.card,
-      color:
-        saveStatus === "Salvando..."
-          ? theme.primary
-          : saveStatus === "Restaurado" 
-          ? "#16a34a"
-          : theme.text,
-      border: `1px solid ${theme.border}`
-    }}
-  >
-    {saveStatus === "Salvando..." && "💾 Salvando..."}
-    {saveStatus === "Salvo" && "✅ Salvo automaticamente"}
-    {saveStatus === "Restaurado" && "📂 Workspace restaurado"}
-  </div>
+          {/* 💾 STATUS */}
+          <div
+            style={{
+              position: "absolute",
+              top: theme.spacing.sm,
+              right: theme.spacing.sm,
+              padding: theme.spacing.sm,
+              borderRadius: "8px",
+              background: theme.card,
+              border: `1px solid ${theme.border}`,
+              fontWeight: 600,
+              fontSize: theme.typography.small.fontSize,
+              color:
+                saveStatus === "Salvando..."
+                  ? theme.primary
+                  : saveStatus === "Restaurado"
+                  ? theme.success
+                  : theme.text,
+              zIndex: 10
+            }}
+          >
+            {saveStatus === "Salvando..." && "💾 Salvando..."}
+            {saveStatus === "Salvo" && "✅ Salvo automaticamente"}
+            {saveStatus === "Restaurado" && "📂 Workspace restaurado"}
+          </div>
 
-  {/* 🧩 Contador de blocos (embaixo do status) */}
-  <div
-    className="absolute top-16 right-3 px-3 py-2 rounded-lg text-sm font-semibold shadow z-10"
-    style={{
-      background: theme.card,
-      color: theme.text,
-      border: `1px solid ${theme.border}`
-    }}
-  >
-    🧩 {blockCount} blocos
-  </div>
+          {/* 🧩 CONTADOR */}
+          <div
+            style={{
+              position: "absolute",
+              top: "60px",
+              right: theme.spacing.sm,
+              padding: theme.spacing.sm,
+              borderRadius: "8px",
+              background: theme.card,
+              border: `1px solid ${theme.border}`,
+              fontWeight: 600,
+              fontSize: theme.typography.small.fontSize,
+              color: theme.text,
+              zIndex: 10
+            }}
+          >
+            🧩 {blockCount} blocos
+          </div>
 
-  {/* Blockly Workspace */}
-  <div ref={blocklyDiv} className="h-full w-full" />
-</div>
+          {/* BLOCKLY */}
+          <div ref={blocklyDiv} className="h-full w-full" />
+        </div>
       </div>
     </div>
   );
