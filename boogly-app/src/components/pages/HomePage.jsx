@@ -200,7 +200,7 @@ export default function Home() {
             description="Entenda inserção, remoção e busca em profundidade em árvores binárias."
             gradient={homeTheme.tree?.gradient || theme?.card}
             onClick={undefined}
-            disabled={true}
+            disabled={true} 
             theme={theme}
           />
         </div>

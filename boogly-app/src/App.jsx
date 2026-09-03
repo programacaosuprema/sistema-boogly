@@ -4,6 +4,7 @@ import { Suspense, lazy } from "react";
 import { useAuth } from "./autenticator/useAuth";
 import { LoadingPage } from "./components/pages/LoadingPage";
 import { ErrorPage } from "./components/pages/ErrorPage";
+import GuidedTour from "./components/tour/GuideTour"; 
 
 // 🔥 lazy load (performance)
 const Home = lazy(() => import("./components/pages/HomePage"));
@@ -52,6 +53,7 @@ export default function App() {
           element={
             <ProtectedRoute>
               <MainApp />
+              <GuidedTour/>
             </ProtectedRoute>
           }
         >

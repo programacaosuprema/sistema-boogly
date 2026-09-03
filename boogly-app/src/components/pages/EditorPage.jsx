@@ -22,6 +22,11 @@ import {
   toolboxCategories
 } from "../../blockly/toolboxes";
 
+/* If you want the tour mounted only for this page, import GuidedTour here:
+   import GuidedTour from "../../components/tour/GuidedTour";
+   and render <GuidedTour /> at the end of the JSX below.
+*/
+
 export default function EditorPage() {
   const { theme } = useTheme();
   const { showError } = useError();
@@ -195,7 +200,6 @@ export default function EditorPage() {
   const isStackStructure = structure === "stack";
 
   // Reset robusto de scroll no eixo apropriado quando safeData muda
-  // (não sobrescrever o foco do simulador quando estivermos em traverse)
   useEffect(() => {
     if (safeStep && safeStep.type === "traverse") return;
 
@@ -239,7 +243,9 @@ export default function EditorPage() {
       {/* MAIN: duas colunas 50% / 50% */}
       <div className="flex flex-1 min-h-0 gap-3">
         {/* ESQUERDA — EDITOR (50%) */}
+        {/* ADDED data-tour="editor" */}
         <section
+          data-tour="editor"
           className="w-1/2 min-h-0 rounded-xl overflow-hidden"
           style={{ background: theme.workspace }}
         >
@@ -258,6 +264,8 @@ export default function EditorPage() {
           <div
             className="flex-[3] min-h-0 rounded-xl p-4 flex flex-col gap-3 overflow-hidden"
             style={{ background: theme.panel }}
+            /* You could place data-tour on the simulation wrapper or on inner scroll wrapper below.
+               I placed it on the inner scroll wrapper for precise highlighting. */
           >
             {/* CONTROLES */}
             <div className="flex items-center gap-3 flex-wrap">
@@ -393,8 +401,10 @@ export default function EditorPage() {
                     minWidth: 0
                   }}
                 >
+                  {/* ADDED data-tour="simulator" on the inner scroll wrapper so Tour highlights the scrolling area */}
                   <div
                     ref={innerScrollWrapperRef}
+                    data-tour="simulator"
                     style={{
                       width: "100%",
                       height: "100%",
@@ -426,8 +436,10 @@ export default function EditorPage() {
             </div>
 
             {/* HISTÓRICO (abaixo da simulação, dentro da mesma coluna direita) */}
+            {/* ADDED data-tour="history" */}
             <div
               ref={historyRef}
+              data-tour="history"
               className="rounded-xl p-4 h-28 overflow-auto border"
               style={{
                 background: theme.toolbox,
@@ -488,11 +500,16 @@ export default function EditorPage() {
           </div>
 
           {/* RODAPÉ — CÓDIGO (fixo) */}
-          <div className="h-56 rounded-xl overflow-hidden" style={{ background: theme.panel }}>
+          {/* ADDED data-tour="code" to the CodePanel wrapper */}
+          <div data-tour="code" className="h-56 rounded-xl overflow-hidden" style={{ background: theme.panel }}>
             <CodePanel cCode={cCode} />
           </div>
         </section>
       </div>
+
+      {/* If you prefer a local tour just for this Editor page, add GuidedTour here:
+          <GuidedTour />  (after creating src/components/tour/GuidedTour.jsx)
+      */}
     </div>
   );
 }

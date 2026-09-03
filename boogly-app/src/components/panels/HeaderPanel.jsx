@@ -1,10 +1,10 @@
+// src/components/header/Header.jsx
 import { useApp } from "../../app_configuration/useApp";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../autenticator/useAuth";
 import { useTheme } from "../../theme/useTheme";
 import ActionButton from "../../components/ui/ActionButton";
 import { LogOut, Trophy, Target, Star } from "lucide-react";
-
 
 const STRUCTURE_LABELS = {
   list: "Lista",
@@ -23,11 +23,7 @@ export default function Header({ structure }) {
   const isChallengePage = location.pathname.startsWith("/app/challenges");
 
   // 🔒 nickname seguro
-  const nickname = user?.nickname
-    ? user.nickname.toUpperCase()
-    : "VISITANTE";
-
-  //const points = user?.points ?? 0;
+  const nickname = user?.nickname ? user.nickname.toUpperCase() : "VISITANTE";
 
   async function handleLogout() {
     try {
@@ -95,24 +91,14 @@ export default function Header({ structure }) {
           modo: <span className="font-semibold">{mode}</span>
         </div>
 
-        {
-          /*
-            <div
-              className="flex items-center gap-2 px-4 py-2 rounded-full text-sm"
-              style={{
-                background: theme.card,
-                border: `1px solid ${theme.border}`
-              }}
-            >
-              <Star className="w-4 h-4" style={{ color: theme.warning }} />
-              {points} pontos
-            </div> 
-          */
-        }
-
         {/* 🎯 DESAFIOS */}
         {!isChallengePage && (
           <ActionButton
+            // atributos que o GuidedTour procura — data-tour e id/class como fallback
+            data-tour="challenges"
+            id="nav-challenges"
+            className="nav-challenges"
+            aria-label={`Ir para desafios ${mode}`}
             onClick={() =>
               navigate(`/app/challenges?structure=${structure}`)
             }
@@ -121,15 +107,6 @@ export default function Header({ structure }) {
             desafios {mode.toLowerCase()}
           </ActionButton>
         )}
-
-        {/*
-          <ActionButton
-            icon={Trophy}
-            onClick={() => navigate("/app/ranking")}
-          >
-            ranking
-          </ActionButton>
-        */}
 
         {/* 🎨 THEME */}
         <select
