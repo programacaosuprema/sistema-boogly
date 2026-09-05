@@ -1,23 +1,30 @@
 import jwt from "jsonwebtoken";
 import { User } from "../models/user.model.js";
 
+function setCookie(res, token) {
+  const isProd = process.env.NODE_ENV === "production";
+
+  res.cookie("access_token", token, {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
+    maxAge: 7 * 24 * 3600 * 1000,
+    path: "/"
+  });
+}
+
 export const authenticate = async (req, res) => {
   try {
     const { email, nick } = req.body;
 
     let user = await User.findOne({
-      $or: [
-        { email },
-        { nickname: email }
-      ]
+      $or: [{ email }, { nickname: email }]
     });
 
     if (!user) {
-      let finalNick = nick || generateNick();
-
       user = await User.create({
         email,
-        nickname: finalNick,
+        nickname: nick || generateNick()
       });
     }
 
@@ -27,29 +34,19 @@ export const authenticate = async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    const isProd = process.env.NODE_ENV === "production";
-
-    // 🔥 AQUI ESTÁ O QUE FALTAVA
-    res.cookie("access_token", token, {
-      httpOnly: true,
-      secure: !!isProd,
-      sameSite: isProd ? "none" : "lax",
-      maxAge: 7 * 24 * 3600 * 1000,
-      path: "/"
-    });
+    setCookie(res, token);
 
     return res.json({
-      message: "Autenticado com sucesso",
       user: {
         id: user._id,
         nickname: user.nickname,
         email: user.email,
+        guest: false
       }
-      // ❌ não precisa mais retornar token
     });
 
-  } catch (error) {
-    return res.status(500).json({ error: error.message });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
   }
 };
 
@@ -70,48 +67,40 @@ function generateNick() {
 
 export const loginGuest = async (req, res) => {
   try {
-    // gera nickname e email fake
-    const timestamp = Date.now().toString().slice(-6); // últimos 6 dígitos
-    const random = Math.random().toString(36).substring(2, 5); // 3 chars
-    const nickname = `Visitante_${timestamp}${random}`;
+    const nickname = `Visitante_${Date.now().toString().slice(-6)}`;
 
-    // cria user guest no DB
     const user = await User.create({
-      email: `guest_${Date.now()}@nolabguest.com`,
+      email: `guest_${Date.now()}@guest.com`,
       nickname,
       guest: true
     });
 
-    // payload do JWT (pode adicionar mais claims)
-    const payload = { id: user._id, guest: true };
-    const secret = process.env.JWT_SECRET || "dev_secret";
-    const token = jwt.sign(payload, secret, { expiresIn: "7d" });
+    const token = jwt.sign(
+      { id: user._id, guest: true },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
 
-    const isProd = process.env.NODE_ENV === "production";
+    setCookie(res, token);
 
-    // seta cookie httpOnly (browser não acessa via JS)
-    res.cookie("access_token", token, {
-      httpOnly: true,
-      secure: !!isProd, // em dev = false, em produção com https = true
-      sameSite: isProd ? "none" : "lax", // sameSite none exige secure:true
-      maxAge: 7 * 24 * 3600 * 1000, // 7 dias
-      path: "/"
-    });
-
-    console.log("[AUTH.CONTROLLER] loginGuest criado:", { nickname: user.nickname, id: user._id.toString().slice(-6) });
-
-    // retorna também o token e dados do user (útil para debug / UI)
-    return res.status(201).json({
+    return res.json({
       user: {
         id: user._id,
         nickname: user.nickname,
-        email: user.email,
         guest: true
-      },
-      token
+      }
     });
-  } catch (error) {
-    console.error("[AUTH.CONTROLLER] loginGuest error:", error && (error.stack || error.message || error));
+
+  } catch (err) {
     return res.status(500).json({ error: "Erro interno" });
   }
+};
+
+export const logout = (req, res) => {
+  res.clearCookie("access_token", {
+    httpOnly: true,
+    path: "/"
+  });
+
+  res.json({ message: "Logout OK" });
 };
