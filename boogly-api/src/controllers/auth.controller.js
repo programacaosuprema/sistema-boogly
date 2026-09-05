@@ -1,7 +1,6 @@
 import jwt from "jsonwebtoken";
 import { User } from "../models/user.model.js";
 
-// 🔥 LOGIN OU REGISTER AUTOMÁTICO
 export const authenticate = async (req, res) => {
   try {
     const { email, nick } = req.body;
@@ -9,17 +8,12 @@ export const authenticate = async (req, res) => {
     let user = await User.findOne({
       $or: [
         { email },
-        { nickname: email } // 🔥 aqui permite login por nick
+        { nickname: email }
       ]
     });
 
-    // 👉 se não existe → cria
     if (!user) {
-      let finalNick = nick;
-
-      if (!finalNick) {
-        finalNick = generateNick();
-      }
+      let finalNick = nick || generateNick();
 
       user = await User.create({
         email,
@@ -27,12 +21,22 @@ export const authenticate = async (req, res) => {
       });
     }
 
-    // 🔥 GERA TOKEN
     const token = jwt.sign(
       { id: user._id },
       process.env.JWT_SECRET,
-      { expiresIn: "1h" }
+      { expiresIn: "7d" }
     );
+
+    const isProd = process.env.NODE_ENV === "production";
+
+    // 🔥 AQUI ESTÁ O QUE FALTAVA
+    res.cookie("access_token", token, {
+      httpOnly: true,
+      secure: !!isProd,
+      sameSite: isProd ? "none" : "lax",
+      maxAge: 7 * 24 * 3600 * 1000,
+      path: "/"
+    });
 
     return res.json({
       message: "Autenticado com sucesso",
@@ -40,8 +44,8 @@ export const authenticate = async (req, res) => {
         id: user._id,
         nickname: user.nickname,
         email: user.email,
-      },
-      token,
+      }
+      // ❌ não precisa mais retornar token
     });
 
   } catch (error) {
@@ -66,25 +70,38 @@ function generateNick() {
 
 export const loginGuest = async (req, res) => {
   try {
-
+    // gera nickname e email fake
     const timestamp = Date.now().toString().slice(-6); // últimos 6 dígitos
-    const random = Math.random().toString(36).substring(2, 5); // 3 letras
-
+    const random = Math.random().toString(36).substring(2, 5); // 3 chars
     const nickname = `Visitante_${timestamp}${random}`;
 
+    // cria user guest no DB
     const user = await User.create({
-      email: `guest_${Date.now()}@guest.com`, // fake
+      email: `guest_${Date.now()}@nolabguest.com`,
       nickname,
-      guest: true // 🔥 importante
+      guest: true
     });
 
-    const token = jwt.sign(
-      { id: user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: "1h" }
-    );
+    // payload do JWT (pode adicionar mais claims)
+    const payload = { id: user._id, guest: true };
+    const secret = process.env.JWT_SECRET || "dev_secret";
+    const token = jwt.sign(payload, secret, { expiresIn: "7d" });
 
-    return res.json({
+    const isProd = process.env.NODE_ENV === "production";
+
+    // seta cookie httpOnly (browser não acessa via JS)
+    res.cookie("access_token", token, {
+      httpOnly: true,
+      secure: !!isProd, // em dev = false, em produção com https = true
+      sameSite: isProd ? "none" : "lax", // sameSite none exige secure:true
+      maxAge: 7 * 24 * 3600 * 1000, // 7 dias
+      path: "/"
+    });
+
+    console.log("[AUTH.CONTROLLER] loginGuest criado:", { nickname: user.nickname, id: user._id.toString().slice(-6) });
+
+    // retorna também o token e dados do user (útil para debug / UI)
+    return res.status(201).json({
       user: {
         id: user._id,
         nickname: user.nickname,
@@ -93,8 +110,8 @@ export const loginGuest = async (req, res) => {
       },
       token
     });
-
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    console.error("[AUTH.CONTROLLER] loginGuest error:", error && (error.stack || error.message || error));
+    return res.status(500).json({ error: "Erro interno" });
   }
 };
