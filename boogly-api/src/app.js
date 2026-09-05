@@ -11,7 +11,7 @@ const app = express();
 // 🔥 defina suas origens permitidas
 const allowedOrigins = [
   "http://localhost:5173",           // dev
-  "https://seu-app.vercel.app"       // PRODUÇÃO 
+  "https://nolab-kappa.vercel.app"       // PRODUÇÃO 
 ];
 
 // 🔥 CORS CORRETO PARA COOKIES
