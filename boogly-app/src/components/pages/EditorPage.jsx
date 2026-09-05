@@ -32,8 +32,6 @@ export default function EditorPage() {
   const { showError } = useError();
   const historyRef = useRef(null);
 
-  const { structure } = useAuth();
-
   const [code, setCode] = useState("");
   const [cCode, setCCode] = useState("");
 
@@ -65,6 +63,8 @@ export default function EditorPage() {
     queue: queueToolbox,
     list: toolboxCategories
   };
+
+  const { structure } = useAuth();
 
   const currentToolbox = toolboxes[structure];
   const runEngine = engines[structure];
@@ -233,7 +233,12 @@ export default function EditorPage() {
         }
       }, delay);
     });
-  }, [JSON.stringify(safeData), safeStep?.type, structure]);
+  }, [isHorizontalStructure, isStackStructure, safeStep, safeStep.type, structure]);
+
+  
+  if (!structure) {
+    return <div>Escolha uma estrutura primeiro</div>;
+  }
 
   return (
     <div

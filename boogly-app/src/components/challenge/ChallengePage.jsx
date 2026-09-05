@@ -55,6 +55,8 @@ export default function ChallengePage() {
         if (token) headers.Authorization = `Bearer ${token}`;
 
         const res = await fetch(`${domainUrl}/challenges?structure=${structure}`, {
+          method: "GET",
+          credentials: "include",
           headers
         });
 
@@ -81,9 +83,10 @@ export default function ChallengePage() {
         if (token) {
           try {
             const meRes = await fetch(`${domainUrl}/users/me`, {
+              method: "GET",
+              credentials: "include",
               headers: {
                 "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`
               }
             });
 
@@ -168,6 +171,9 @@ export default function ChallengePage() {
   if (hasError) {
     return <ErrorPage message="Não foi possível carregar os desafios." />;
   }
+
+  console.log("Challenge:", challenges);
+console.log("publicId:", challenges[1].publicId);
 
   // 🔥 LISTA VAZIA
   if (challenges.length === 0) {
@@ -333,6 +339,7 @@ export default function ChallengePage() {
 
       {/* LINHAS */}
       {challenges.map((c, index) => (
+        
         <div
           key={c._id}
           onClick={() =>

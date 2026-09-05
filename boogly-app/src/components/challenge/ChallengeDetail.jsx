@@ -35,7 +35,11 @@ export default function ChallengeDetail() {
         const headers = { "Content-Type": "application/json" };
         if (token) headers.Authorization = `Bearer ${token}`;
 
-        const res = await fetch(`${domainUrl}/challenges/${id}`, { headers });
+        const res = await fetch(`${domainUrl}/challenges/${id}`, {
+          method: "GET",
+          credentials: "include",
+          headers 
+        });
         if (!res.ok) throw new Error("Erro ao carregar desafio");
 
         const data = await res.json();
@@ -92,6 +96,7 @@ export default function ChallengeDetail() {
 
       const res = await fetch(`${domainUrl}/challenges/${id}/submit`, {
         method: "POST",
+        credentials: "include",
         headers,
         body: JSON.stringify({ commands })
       });

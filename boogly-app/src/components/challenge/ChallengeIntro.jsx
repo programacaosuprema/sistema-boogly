@@ -27,9 +27,9 @@ export function ChallengeIntro({ challenge, onStart }) {
 
       const res = await fetch(`${domainUrl}/challenges/${id}/attempt`, {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
         }
       });
 

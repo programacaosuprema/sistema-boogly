@@ -27,7 +27,7 @@ export default function OnboardingFlow({ onFinish }) {
   });
 
   const { domainUrl } = useContext(AppContext);
-  const { token, user, refreshUser } = useAuth();
+  const { user, refreshUser } = useAuth();
   const { theme } = useTheme();
   const nextButtonRef = useRef(null);
 
@@ -49,12 +49,10 @@ export default function OnboardingFlow({ onFinish }) {
 
   const finish = useCallback(async () => {
     try {
-      // GUEST: grava em sessionStorage (com opção de localStorage se o usuário optar)
+      // 👻 GUEST (local/session storage)
       try {
         if (dontShow) {
-          // persiste em sessionStorage para guests por compatibilidade
           sessionStorage.setItem("onboarding_done", "true");
-          // grava também em localStorage para persistir mais tempo (opcional)
           localStorage.setItem("onboarding_done", "true");
         } else {
           sessionStorage.removeItem("onboarding_done");
@@ -64,13 +62,13 @@ export default function OnboardingFlow({ onFinish }) {
         console.warn("Storage write failed:", e);
       }
 
-      // USUÁRIO LOGADO (salva no backend)
-      if (token && !user?.guest) {
+      // 👤 USUÁRIO LOGADO (cookie-based)
+      if (user && !user?.guest) {
         const res = await fetch(`${domainUrl}/users/me/onboarding`, {
           method: "PATCH",
+          credentials: "include", // 🔥 ESSENCIAL
           headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`
+            "Content-Type": "application/json"
           },
           body: JSON.stringify({ onboardingDone: !!dontShow })
         });
@@ -79,7 +77,7 @@ export default function OnboardingFlow({ onFinish }) {
           console.warn("Onboarding save returned non-ok:", res.status);
         }
 
-        // atualiza user no contexto (se disponível)
+        // atualiza user no contexto
         try {
           await refreshUser();
         } catch (err) {
@@ -90,11 +88,14 @@ export default function OnboardingFlow({ onFinish }) {
       onFinish?.();
     } catch (err) {
       console.error("Erro onboarding:", err);
-      // tenta atualizar o user de qualquer forma e fecha
-      try { await refreshUser(); } catch(e) { /* noop */ }
+
+      try {
+        await refreshUser();
+      } catch (e) {}
+
       onFinish?.();
     }
-  }, [dontShow, token, user, domainUrl, onFinish, refreshUser]);
+  }, [dontShow, user, domainUrl, onFinish, refreshUser]);
 
   function next() {
     if (step === steps.length - 1) finish();

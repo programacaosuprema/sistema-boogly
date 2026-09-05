@@ -1,5 +1,5 @@
 // src/pages/Home.jsx
-import React, { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import AuthModal from "./AuthModal";
 import OnboardingFlow from "./OnBoardFlow";
 
@@ -13,32 +13,59 @@ import { AppContext } from "../../app_configuration/AppContext";
 import { useTheme } from "../../theme/useTheme";
 
 /**
- * Home page atualizada para usar theme.js corretamente e evitar manipulação direta do DOM.
- * - Usa useTheme() para cores/typography/spacing.
- * - Mantém homeTheme apenas para gradientes dos cards.
- * - Não altera estilos diretamente no evento onMouseEnter/onMouseLeave.
+ * Home page atualizada:
+ * - persiste structure em localStorage
+ * - tenta restaurar structure da storage ao montar
+ * - usa credentials: 'include' ao checar /users/me quando necessário (suporta cookies httpOnly)
+ * - HomeCard mais legível em gradientes/temas escuros (overlay)
+ * - inclui card "Árvore Binária" desabilitado como "Em breve"
  */
 
 export default function Home() {
-  const { user, token, loginAsGuest, setStructure } = useAuth();
+  const { user, loginAsGuest, setStructure } = useAuth();
   const { showError } = useError();
   const { domainUrl } = useContext(AppContext);
   const [openModal, setOpenModal] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [selectedStructure, setSelectedStructure] = useState(null);
   const [loadingGuest, setLoadingGuest] = useState(false);
-
   const navigate = useNavigate();
   const { appName } = useApp();
+  const { theme } = useTheme();
 
-  const { theme } = useTheme(); // usa o theme global
+  // --- Restore structure from localStorage on mount (so /app knows what to show after reload)
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("structure");
+      if (saved && setStructure) {
+        setStructure(saved);
+      }
+    } catch (e) {
+      console.warn("Não foi possível ler structure do localStorage:", e);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // run once
 
-  // 🚀 INICIAR FLUXO
+  // centraliza a lógica de persistência (use quando o aluno escolhe)
+  function persistAndSetStructure(type) {
+    try {
+      if (setStructure) setStructure(type);
+      localStorage.setItem("structure", type);
+    } catch (e) {
+      console.warn("Erro ao persistir structure:", e);
+    }
+  }
+
+  // 🚀 INICIAR FLUXO (usado pelos cards)
   async function handleStart(type) {
     if (!type) {
       showError({ message: "Estrutura inválida" });
       return;
     }
+
+    // salva a intenção imediatamente (evita perda se navegar)
+    persistAndSetStructure(type);
+    setSelectedStructure(type);
 
     // se não logado, abre modal de autenticação
     if (!user) {
@@ -46,14 +73,12 @@ export default function Home() {
       return;
     }
 
-    setSelectedStructure(type);
-
     try {
-      // 👻 usuário guest
+      // 👻 usuário guest (usa sessionStorage/localStorage)
       if (user.guest) {
-        const done = sessionStorage.getItem("onboarding_done");
+        const done = sessionStorage.getItem("onboarding_done") || localStorage.getItem("onboarding_done");
         if (done === "true") {
-          setStructure(type);
+          // já pode ir pro app
           navigate("/app");
           return;
         }
@@ -62,14 +87,19 @@ export default function Home() {
       }
 
       // 👤 usuário real -> verifica se terminou onboarding
+      // Usamos credentials: 'include' porque você está suportando cookie-based auth
       const res = await fetch(`${domainUrl}/users/me`, {
+        method: "GET",
+        credentials: "include", // importante para cookies httpOnly
         headers: {
-          Authorization: `Bearer ${token}`
+          // Se você também usa token guardado no localStorage, pode incluir Authorization
+          // Authorization: token ? `Bearer ${token}` : undefined,
+          "Content-Type": "application/json"
         }
       });
 
       if (!res.ok) {
-        // caso servidor responda com erro, não bloqueia o fluxo; abre onboarding
+        // se 401/404 -> mostra onboarding (não bloqueia)
         setShowOnboarding(true);
         return;
       }
@@ -77,19 +107,18 @@ export default function Home() {
       const data = await res.json();
 
       if (data.onboardingDone === true) {
-        setStructure(type);
         navigate("/app");
       } else {
         setShowOnboarding(true);
       }
     } catch (err) {
-      console.error(err);
-      // se der erro de rede, permitimos continuar com onboarding local
+      console.error("Erro em handleStart:", err);
+      // em caso de erro de rede, vamos permitir onboarding local
       setShowOnboarding(true);
     }
   }
 
-  // finaliza onboarding (muda estrutura e navega)
+  // final do onboarding — garante persistência e navegação
   function finishOnboarding() {
     if (!selectedStructure) {
       showError({ message: "Erro ao iniciar o desafio" });
@@ -97,7 +126,7 @@ export default function Home() {
     }
 
     try {
-      setStructure(selectedStructure);
+      persistAndSetStructure(selectedStructure);
       setShowOnboarding(false);
       navigate("/app");
     } catch (err) {
@@ -110,6 +139,9 @@ export default function Home() {
     try {
       setLoadingGuest(true);
       await loginAsGuest();
+      // após loginGuest o AuthProvider deve atualizar user automaticamente
+      // e você pode navegar direto se quiser:
+      // persistAndSetStructure("list"); navigate("/app");
     } catch (err) {
       showError(err);
     } finally {
@@ -126,7 +158,7 @@ export default function Home() {
         fontFamily: theme?.typography?.body?.fontFamily || undefined
       }}
     >
-      {/* container central (cartão) */}
+      {/* container central */}
       <div
         style={{
           width: "100%",
@@ -140,7 +172,7 @@ export default function Home() {
           boxSizing: "border-box"
         }}
       >
-        {/* 🧠 TITLE */}
+        {/* TITLE */}
         <h1
           className="text-center"
           style={{
@@ -165,14 +197,14 @@ export default function Home() {
           Escolha seu primeiro desafio!
         </p>
 
-        {/* 🧩 CARDS */}
+        {/* CARDS */}
         <div
           className="flex flex-wrap justify-center gap-8"
           style={{ width: "100%", marginTop: theme?.spacing?.md }}
         >
           <HomeCard
             title="Lista"
-            description="Aprenda como funciona uma lista (inserção, remoção, criação)."
+            description="Aprenda como funciona uma lista (inserção, remoção, travessia)."
             gradient={homeTheme.list?.gradient}
             onClick={() => handleStart("list")}
             theme={theme}
@@ -180,7 +212,7 @@ export default function Home() {
 
           <HomeCard
             title="Pilha"
-            description="Entenda com funciona empilhar e desempilhar com blocos"
+            description="Entenda PUSH e POP: funcionamento LIFO."
             gradient={homeTheme.stack?.gradient}
             onClick={() => handleStart("stack")}
             theme={theme}
@@ -188,24 +220,24 @@ export default function Home() {
 
           <HomeCard
             title="Fila"
-            description="Enfileire e desenfileire elementos com operações simples."
+            description="FIFO — enfileire e desenfileire elementos com operações simples."
             gradient={homeTheme.queue?.gradient}
             onClick={() => handleStart("queue")}
             theme={theme}
           />
 
-          {/* NOVO: Árvore Binária — Em breve */}
+          {/* Em breve: Árvore Binária */}
           <HomeCard
             title="Árvore Binária"
-            description="Entenda inserção, remoção e busca em profundidade em árvores binárias."
-            gradient={homeTheme.tree?.gradient || theme?.card}
-            onClick={undefined}
-            disabled={true} 
+            description="Explorar travessia e inserção em árvore binária — Em breve."
+            gradient={homeTheme.tree?.gradient}
+            onClick={() => {}}
+            disabled={true}
             theme={theme}
           />
         </div>
 
-        {/* 🔥 ACTIONS */}
+        {/* ACTIONS */}
         <div
           className="mt-6 flex flex-col items-center gap-4"
           style={{ width: "100%", alignItems: "center" }}
@@ -226,10 +258,8 @@ export default function Home() {
           </p>
         </div>
 
-        {/* AUTH MODAL */}
+        {/* AUTH MODAL / ONBOARDING */}
         <AuthModal isOpen={openModal} onClose={() => setOpenModal(false)} />
-
-        {/* ONBOARDING */}
         {showOnboarding && <OnboardingFlow onFinish={finishOnboarding} />}
       </div>
     </div>
@@ -237,81 +267,17 @@ export default function Home() {
 }
 
 /* ======= COMPONENTS AUXILIARES ======= */
-
-/**
- * HomeCard com overlay adaptativo para legibilidade.
- * Props:
- * - title, description, gradient, onClick, disabled, theme
- */
 function HomeCard({ title, description, gradient, onClick, disabled = false, theme }) {
   const [hover, setHover] = useState(false);
 
-  // tenta extrair primeira cor do gradient (se for linear-gradient(...))
-  function extractFirstColorFromGradient(g) {
-    if (!g || typeof g !== "string") return null;
-    // procura por #xxxxxx ou rgb(...)
-    const hexMatch = g.match(/#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})/);
-    if (hexMatch) return hexMatch[0];
-    const rgbMatch = g.match(/rgba?\([^\)]+\)/);
-    if (rgbMatch) return rgbMatch[0];
-    // se for "to right, #fff 0%, #000 100%" -> pega primeiro stop
-    const stops = g.split(",").map(s => s.trim());
-    for (let s of stops) {
-      const h = s.match(/#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})/);
-      if (h) return h[0];
-      const r = s.match(/rgba?\([^\)]+\)/);
-      if (r) return r[0];
-    }
-    return null;
-  }
+  // overlay para melhorar contraste quando gradient é usado
+  const overlayDark = "rgba(0,0,0,0.36)";
+  const overlayLight = "rgba(255,255,255,0.06)";
 
-  // helpers de parsing (hex / rgb) para obter rgb array
-  function hexToRgb(hex) {
-    if (!hex) return null;
-    const h = hex.replace("#", "");
-    if (h.length === 3) {
-      return [
-        parseInt(h[0] + h[0], 16),
-        parseInt(h[1] + h[1], 16),
-        parseInt(h[2] + h[2], 16)
-      ];
-    }
-    return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
-  }
-
-  function rgbStringToArray(rgb) {
-    const m = rgb && rgb.match && rgb.match(/rgba?\(([^)]+)\)/);
-    if (!m) return null;
-    return m[1].split(",").slice(0, 3).map(s => parseInt(s.trim()));
-  }
-
-  function toRgbArray(color) {
-    if (!color) return [15, 23, 42];
-    if (typeof color !== "string") return [15, 23, 42];
-    if (color.startsWith("#")) return hexToRgb(color);
-    if (color.startsWith("rgb")) return rgbStringToArray(color);
-    return hexToRgb(color);
-  }
-
-  function luminance([r, g, b]) {
-    const srgb = [r, g, b].map(c => c / 255).map(c => (c <= 0.03928 ? c / 12.92 : Math.pow(((c + 0.055) / 1.055), 2.4)));
-    return 0.2126 * srgb[0] + 0.7152 * srgb[1] + 0.0722 * srgb[2];
-  }
-
-  // determina se o fundo do cartão é escuro (usa a primeira cor do gradient se existente)
-  const firstColor = extractFirstColorFromGradient(gradient) || theme?.background || "#0f172a";
-  const firstColorArr = toRgbArray(firstColor);
-  const isDarkBg = luminance(firstColorArr) < 0.45;
-
-  // overlay adaptativo: usa a cor do theme.background com alpha
-  const bgColorArr = toRgbArray(theme?.background ?? "#0f172a");
-  const overlayAlpha = isDarkBg ? 0.56 : 0.18;
-  const [r, g, b] = bgColorArr;
-  const overlayColor = `rgba(${r}, ${g}, ${b}, ${overlayAlpha})`;
+  const background = gradient || theme?.card || "#ffffff";
 
   const cardStyle = {
-    background: gradient || theme?.card || theme?.workspace,
-    position: "relative",
+    background,
     width: 256,
     padding: 20,
     borderRadius: 20,
@@ -319,96 +285,62 @@ function HomeCard({ title, description, gradient, onClick, disabled = false, the
     transform: hover ? "translateY(-6px) scale(1.03)" : "translateY(0) scale(1)",
     transition: "all 180ms ease",
     cursor: disabled ? "not-allowed" : "pointer",
-    opacity: disabled ? 0.7 : 1,
+    opacity: disabled ? 0.6 : 1,
     display: "flex",
     flexDirection: "column",
-    justifyContent: "space-between",
+    gap: 12,
     boxSizing: "border-box",
     minHeight: 160,
-    overflow: "hidden",
-    border: `1px solid ${theme?.border}`
-  };
-
-  const overlayStyle = {
-    position: "absolute",
-    inset: 0,
-    background: overlayColor,
-    pointerEvents: "none"
-  };
-
-  const contentStyle = {
+    justifyContent: "space-between",
     position: "relative",
-    zIndex: 2,
-    color: theme?.text,
-    textShadow: isDarkBg ? "0 1px 6px rgba(0,0,0,0.6)" : "none"
-  };
-
-  const titleStyle = {
-    margin: 0,
-    color: theme?.text,
-    ...theme?.typography?.h2,
-    fontWeight: 800,
-    letterSpacing: "0.2px"
-  };
-
-  const descStyle = {
-    marginTop: 8,
-    marginBottom: 0,
-    color: isDarkBg ? "#e6eefb" : theme?.muted,
-    ...theme?.typography?.body,
-    display: "-webkit-box",
-    WebkitLineClamp: 3,
-    WebkitBoxOrient: "vertical",
     overflow: "hidden"
   };
 
-  const buttonStyle = {
-    width: "100%",
-    padding: "10px 12px",
-    borderRadius: 10,
-    fontWeight: 700,
-    border: "none",
-    cursor: disabled ? "not-allowed" : "pointer",
-    background: disabled ? theme?.border : theme?.success,
-    color: "#000",
-    marginTop: 12
-  };
+  // decide overlay com base no tema de fundo
+  const overlayColor = theme?.name?.toLowerCase?.() === "escuro" ? overlayDark : overlayLight;
 
   return (
     <div
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => { if (!disabled && (e.key === "Enter" || e.key === " ")) onClick && onClick(); }}
       onClick={!disabled ? onClick : undefined}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
-      style={cardStyle}
+      role="button"
       aria-disabled={disabled}
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (!disabled && (e.key === "Enter" || e.key === " ")) onClick && onClick();
+      }}
+      className="w-64 p-5 rounded-2xl shadow-xl transition"
+      style={cardStyle}
     >
-      {/* overlay para legibilidade */}
-      <div style={overlayStyle} aria-hidden="true" />
+      {/* overlay para legibilidade (apenas se tiver gradiente) */}
+      {gradient && <div style={{ position: "absolute", inset: 0, background: overlayColor, pointerEvents: "none" }} />}
 
-      {/* conteúdo */}
-      <div style={contentStyle}>
-        <div>
-          <h2 style={titleStyle}>{title}</h2>
-          <p style={descStyle}>{description}</p>
-        </div>
+      <div style={{ position: "relative", zIndex: 1 }}>
+        <h2 style={{ margin: 0, color: theme?.text, ...theme?.typography?.h2 }}>{title}</h2>
+        <p style={{ marginTop: 8, marginBottom: 0, color: theme?.muted, ...theme?.typography?.body }}>{description}</p>
+      </div>
 
-        <div>
-          <button style={buttonStyle} disabled={disabled} aria-label={`Iniciar ${title}`}>
-            {disabled ? "Em breve" : "Iniciar"}
-          </button>
-        </div>
+      <div style={{ position: "relative", zIndex: 1 }}>
+        <button
+          className="w-full py-2 rounded-lg font-semibold"
+          style={{
+            background: disabled ? theme?.border : "#4ade80",
+            color: "#000",
+            border: `1px solid ${theme?.border}`
+          }}
+          disabled={disabled}
+          aria-label={`Iniciar ${title}`}
+        >
+          {disabled ? "Em breve" : "Iniciar"}
+        </button>
       </div>
     </div>
   );
 }
 
-/* PrimaryButton - estilo consistente com theme */
 function PrimaryButton({ onClick, text, theme }) {
   const [hover, setHover] = useState(false);
-
   return (
     <button
       onClick={onClick}
@@ -429,10 +361,8 @@ function PrimaryButton({ onClick, text, theme }) {
   );
 }
 
-/* GhostButton - botão secundário / convidado */
 function GhostButton({ onClick, text, loading = false, theme }) {
   const [hover, setHover] = useState(false);
-
   return (
     <button
       onClick={onClick}

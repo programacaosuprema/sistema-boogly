@@ -20,15 +20,19 @@ const ChallengeDetail = lazy(() =>
 
 // 🔒 PROTECTED ROUTE
 function ProtectedRoute({ children }) {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loadingAuth, structure } = useAuth();
   const location = useLocation();
 
-  if (loading) {
+  if (loadingAuth) {
     return <LoadingPage />;
   }
 
   if (!isAuthenticated) {
     return <Navigate to="/" state={{ from: location }} replace />;
+  }
+
+  if (!structure) {
+    return <Navigate to="/" replace />;
   }
 
   return children;
