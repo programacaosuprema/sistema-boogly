@@ -2,6 +2,7 @@
 import mongoose from "mongoose";
 import { Challenge } from "../models/challenge.model.js";
 import { UserChallenge } from "../models/userChallenge.model.js";
+import { nanoid } from "nanoid";
 
 function formatValue(value) {
   if (value === null || value === undefined) return "nulo";
