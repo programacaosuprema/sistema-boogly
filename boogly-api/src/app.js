@@ -8,25 +8,25 @@ import userRoutes from "./routes/user.routes.js";
 
 const app = express();
 
-// 🔥 defina suas origens permitidas
 const allowedOrigins = [
-  "http://localhost:5173",           // dev
-  "https://nolab-az4nvobov-nolab1.vercel.app"       // PRODUÇÃO 
+  "http://localhost:5173",
+  "https://nolab.vercel.app", // seu domínio principal
+  "https://nolab-kappa.vercel.app",
+  "https://nolab-mit2w9075-nolab1.vercel.app"
 ];
 
-// 🔥 CORS CORRETO PARA COOKIES
 app.use(cors({
   origin: function (origin, callback) {
-    // permite ferramentas como curl/postman (sem origin)
     if (!origin) return callback(null, true);
 
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
 
-    return callback(new Error("CORS bloqueado: " + origin));
+    console.log("❌ CORS bloqueado:", origin);
+    return callback(null, false); // ⚠️ NÃO usa Error!
   },
-  credentials: true, //  ESSENCIAL PARA COOKIES
+  credentials: true,
   methods: ["GET","POST","PUT","PATCH","DELETE","OPTIONS"],
   allowedHeaders: ["Content-Type","Authorization"]
 }));
