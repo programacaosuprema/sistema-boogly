@@ -172,9 +172,6 @@ export default function ChallengePage() {
     return <ErrorPage message="Não foi possível carregar os desafios." />;
   }
 
-  console.log("Challenge:", challenges);
-console.log("publicId:", challenges[1].publicId);
-
   // 🔥 LISTA VAZIA
   if (challenges.length === 0) {
     return (
