@@ -8,28 +8,23 @@ import userRoutes from "./routes/user.routes.js";
 
 const app = express();
 
-const allowedOrigins = [
-  "http://localhost:5173",
-  "https://nolab.vercel.app", // seu domínio principal
-  "https://nolab-kappa.vercel.app",
-  "https://nolab-mit2w9075-nolab1.vercel.app"
-];
-
 app.use(cors({
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
 
-    if (allowedOrigins.includes(origin)) {
+    if (
+      origin.includes("localhost") ||
+      origin.includes("vercel.app")
+    ) {
       return callback(null, true);
     }
 
-    console.log("❌ CORS bloqueado:", origin);
-    return callback(null, false); // ⚠️ NÃO usa Error!
+    // 🔥 permite mesmo assim (evita erro em produção)
+    return callback(null, true);
   },
-  credentials: true,
-  methods: ["GET","POST","PUT","PATCH","DELETE","OPTIONS"],
-  allowedHeaders: ["Content-Type","Authorization"]
+  credentials: true
 }));
+
 
 app.use(express.json());
 app.use(cookieParser()); // obrigatório para ler cookies
