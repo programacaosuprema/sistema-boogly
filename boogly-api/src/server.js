@@ -1,8 +1,8 @@
+import dotenv from "dotenv";
+dotenv.config(); // 🔥 PRIMEIRO DE TUDO
+
 import app from "./app.js";
 import { connectDB } from "./config/database.js";
-
-import dotenv from "dotenv";
-dotenv.config();
 
 const PORT = process.env.PORT || 3000;
 
@@ -16,6 +16,6 @@ const PORT = process.env.PORT || 3000;
 
   } catch (error) {
     console.error("❌ Erro ao iniciar o servidor:", error);
-    process.exit(1); // importante pra mostrar erro no Railway
+    process.exit(1);
   }
 })();
