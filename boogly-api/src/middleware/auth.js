@@ -39,21 +39,20 @@ export function optionalAuth(req, res, next) {
  * - aceita cookie OU header
  */
 export function requireAuth(req, res, next) {
-  let token = req.cookies?.access_token;
+  const tokenFromHeader = req.headers.authorization?.split(" ")[1];
+  const tokenFromCookie = req.cookies?.access_token;
 
-  if (!token && req.headers.authorization) {
-    token = req.headers.authorization.split(" ")[1];
-  }
+  const token = tokenFromHeader || tokenFromCookie;
 
   if (!token) {
-    return res.status(401).json({ message: "Token não fornecido" });
+    return res.status(401).json({ message: "Não autenticado" });
   }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.userId = decoded.id;
     next();
-  } catch (err) {
+  } catch {
     return res.status(401).json({ message: "Token inválido" });
   }
 }
