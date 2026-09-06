@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-dotenv.config(); // 🔥 PRIMEIRO DE TUDO
+dotenv.config({ path: "./.env" }); // 🔥 PRIMEIRO DE TUDO
 
 import app from "./app.js";
 import { connectDB } from "./config/database.js";
