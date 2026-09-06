@@ -39,30 +39,21 @@ export function optionalAuth(req, res, next) {
  * - aceita cookie OU header
  */
 export function requireAuth(req, res, next) {
+  let token = req.cookies?.access_token;
+
+  if (!token && req.headers.authorization) {
+    token = req.headers.authorization.split(" ")[1];
+  }
+
+  if (!token) {
+    return res.status(401).json({ message: "Token não fornecido" });
+  }
+
   try {
-    let token = null;
-
-    // 🍪 1. cookie primeiro
-    if (req.cookies?.access_token) {
-      token = req.cookies.access_token;
-    }
-
-    // 🔑 2. fallback header (opcional)
-    else if (req.headers.authorization) {
-      token = req.headers.authorization.split(" ")[1];
-    }
-
-    if (!token) {
-      return res.status(401).json({ error: "Não autenticado" });
-    }
-
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
     req.userId = decoded.id;
-
     next();
-
   } catch (err) {
-    return res.status(401).json({ error: "Token inválido" });
+    return res.status(401).json({ message: "Token inválido" });
   }
 }
