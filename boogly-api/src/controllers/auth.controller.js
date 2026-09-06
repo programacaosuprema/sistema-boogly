@@ -2,12 +2,12 @@ import jwt from "jsonwebtoken";
 import { User } from "../models/user.model.js";
 
 function setCookie(res, token) {
-  const isProd = process.env.NODE_ENV === "production";
+  //const isProd = process.env.NODE_ENV === "production";
 
   res.cookie("access_token", token, {
     httpOnly: true,
-    secure: isProd,
-    sameSite: isProd ? "none" : "lax",
+    secure: true,
+    sameSite: "none",
     maxAge: 7 * 24 * 3600 * 1000,
     path: "/"
   });
